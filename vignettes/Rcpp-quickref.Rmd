@@ -1,66 +1,82 @@
-% !Rnw driver = highlight::HighlightWeaveLatex()
-\documentclass[8pt,twocolumn,a4paper]{article}
-%\VignetteIndexEntry{Rcpp-quickref}
-%\VignetteEngine{highlight::highlight}
-%\VignetteKeywords{Rcpp, reference}
-%\VignetteDepends{Rcpp}
+---
+title: |
+       | \pkg{Rcpp} Quick Reference Guide
 
-\setlength{\hoffset}{-0.8in}
-\setlength{\voffset}{-0.8in}
+# Use letters for affiliations
+author:
+  - name: Dirk Eddelbuettel
+    affiliation: a
+  - name: Romain Francois
+    affiliation: a
 
-\setlength{\marginparwidth}{0pt}
-\setlength{\marginparsep}{0pt}
-\setlength{\oddsidemargin}{0pt}
-\setlength{\headheight}{0pt}
-\setlength{\topmargin}{0pt}
-\setlength{\headsep}{0pt}
-\setlength{\footskip}{0pt}
-\setlength{\textheight}{27cm}
-\setlength{\textwidth}{20cm}
+address:
+  - code: a
+    address: \url{http://dirk.eddelbuettel.com}
+  - code: b
+    address: \url{https://romain.rbind.io/}
 
-\usepackage[colorlinks]{hyperref}
+# For footer text
+lead_author_surname: Eddelbuettel and Francois
 
-\usepackage{microtype}                     %% cf http://www.khirevich.com/latex/microtype/
-\usepackage[T1]{fontenc}		   %% cf http://www.khirevich.com/latex/font/
-\usepackage[bitstream-charter]{mathdesign} %% cf http://www.khirevich.com/latex/font/
+# Place DOI URL or CRAN Package URL here
+doi: "https://cran.r-project.org/package=Rcpp"
 
-\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+# Abstract
+abstract: |
+  This document provides short code snippets that are helpful for using the
+  \pkg{Rcpp} \citep{CRAN:Rcpp,JSS:Rcpp,Eddelbuettel:2013:Rcpp}.
 
-<<echo=FALSE,print=FALSE>>=
-options( width= 50)
-library( "Rcpp" )
-prettyVersion <- packageDescription("Rcpp")$Version
-prettyDate <- format(Sys.Date(), "%B %e, %Y")
-@
+# Optional: Acknowledgements
+# acknowledgements: |
 
-\author{Romain Fran\c{c}ois \and Dirk Eddelbuettel}
-\title{\pkg{Rcpp} Quick Reference Guide}
-\date{\pkg{Rcpp} version \Sexpr{prettyVersion} as of \Sexpr{prettyDate}}
+# Optional: One or more keywords
+keywords:
+  - Rcpp
+  - quickref
+  - r
+  - cpp
 
-\newsavebox{\quickrefbox}
-\definecolor{quickrefBg}{rgb}{0.949019607843137,0.949019607843137,0.949019607843137}
-\definecolor{quickrefBorder}{rgb}{0,0,0}
-\renewenvironment{Hchunk}%
-{%
-\vspace{0.5em}\noindent\begin{lrbox}{\quickrefbox}%
-\begin{minipage}[b]{.42\textwidth}%
-}%
-{%
-\end{minipage}%
-\end{lrbox}%
-\fcolorbox{quickrefBorder}{quickrefBg}{\usebox{\quickrefbox}}%
-\vspace{0.5em}}%
+# Font size of the document, values of 9pt (default), 10pt, 11pt and 12pt
+fontsize: 9pt
 
-\begin{document}
-\maketitle
-\thispagestyle{empty}
+# Optional: Force one-column layout, default is two-column
+#one_column: true
 
-% without the ~, latex does not want to newline
-% a newline between paragraph and code disconnects them and can orphan heading
+# Optional: Enables lineo mode, but only if one_column mode is also true
+#lineno: true
 
-\paragraph{Important Notes}~
-  \newline
-<<lang=cpp>>=
+# Optional: Enable one-sided layout, default is two-sided
+#one_sided: true
+
+# Optional: Bibliography
+bibliography: Rcpp
+
+# Optional: Enable a 'Draft' watermark on the document
+#watermark: false
+
+# Customize footer, eg by referencing the vignette
+footer_contents: "Rcpp Vignette"
+
+# Our style
+output: pinp::pinp
+
+header-includes:
+  \newcommand{\proglang}[1]{\textsf{#1}}
+  \newcommand{\pkg}[1]{\textbf{#1}}
+  \newcommand{\faq}[1]{FAQ~\ref{#1}}
+  \newcommand{\rdoc}[2]{\href{http://www.rdocumentation.org/packages/#1/functions/#2}{\code{#2}}}
+  \newcommand{\sugar}{\textsl{Rcpp sugar}~}
+
+vignette: >
+  %\VignetteIndexEntry{Rcpp-quickref}
+  %\VignetteKeywords{Rcpp, quickref, r, cpp}
+  %\VignettePackage{Rcpp}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+\paragraph{Important Notes} 
+
+```{Rcpp, eval = FALSE}
 // If you experience compiler errors, please check that you have an appropriate version of g++. See `Rcpp-FAQ' for more information.
 
 // Many of the examples here imply the following:
@@ -70,11 +86,11 @@ using namespace Rcpp;
 
 // Or, prefix Rcpp objects with the Rcpp namespace e.g.:
 Rcpp::NumericVector xx(10);
-@
+```
 
-\paragraph{Create simple vectors}~
-  \newline
-<<lang=cpp>>=
+\paragraph{Create simple vectors}
+
+```{Rcpp, eval = FALSE}
 SEXP x; std::vector<double> y(10);
 
 // from SEXP
@@ -94,11 +110,11 @@ NumericVector xx = NumericVector::create(
 NumericVector yy = NumericVector::create(
     Named["foo"] = 1.0,
         _["bar"] = 2.0 );  // _ short for Named
-@
+```
 
-\paragraph{Extract and set single elements}~
-  \newline
-<<lang=cpp>>=
+\paragraph{Extract and set single elements}
+
+```{Rcpp, eval = FALSE}
 // extract single values
 double x0 = xx[0];
 double x1 = xx(1);
@@ -114,11 +130,11 @@ yy["foo"] = 3.0;
 
 // grow the vector
 yy["foobar"] = 10.0;
-@
+```
 
-\paragraph{Using matrices}~
-  \newline
-<<lang=cpp>>=
+\paragraph{Using matrices}
+
+```{Rcpp, eval = FALSE}
 // Initializing from SEXP,
 // dimensions handled automatically
 SEXP x;
@@ -148,11 +164,11 @@ zzcol = zzcol * 2;
 NumericVector zz1 = xx( _, 1);
 // Copy the submatrix (top left 3x3) into new object
 NumericMatrix zz2 = xx( Range(0,2), Range(0,2));
-@
+```
 
-\paragraph{Inline C++ Compile in R}~
-  \newline
-<<lang=cpp>>=
+\paragraph{Inline C++ Compile in R}
+
+```{r, eval = FALSE}
 ## Note - this is R code. 
 ## cppFunction in Rcpp allows rapid testing.
 require(Rcpp)
@@ -167,11 +183,11 @@ exfun(1:5, 3)
 
 ## Use evalCpp to evaluate C++ expressions
 evalCpp("std::numeric_limits<double>::max()")
-@
+```
 
-\paragraph{Interface with R}~
-  \newline
-<<lang=cpp>>=
+\paragraph{Interface with R}
+
+```{Rcpp, eval = FALSE}
 ## In R, create a package shell. For details, see the "Writing R Extensions" manual.
 
 Rcpp.package.skeleton("myPackage")
@@ -212,11 +228,11 @@ aa == bb ## FALSE, C++ modifies aa
 aa = 1:2; bb = 1:2; cc =  myfunR(aa, bb)
 identical(aa, bb)
 ## TRUE, R/C++ types don't match
-@
+```
 
-\paragraph{STL interface}~
-  \newline
-<<lang=cpp>>=
+\paragraph{STL interface}
+
+```{Rcpp, eval = FALSE}
 // sum a vector from beginning to end
 double s = std::accumulate(x.begin(),
    x.end(), 0.0);
@@ -226,11 +242,11 @@ int p = std::accumulate(vec.begin(),
 // inner_product to compute sum of squares
 double s2 = std::inner_product(res.begin(),
     res.end(), res.begin(), 0.0);
-@
+```
 
-\paragraph{Rcpp Attributes}~
-  \newline
-<<lang=cpp>>=
+\paragraph{Rcpp Attributes}
+
+```{Rcpp, eval = FALSE}
 // Add code below into C++ file Rcpp_example.cpp
 
 #include <Rcpp.h>
@@ -276,13 +292,11 @@ sourceCpp("path/to/file/Rcpp_example.cpp")
 x = 1:5;
 all.equal(muRcpp(x), mean(x)); all.equal(var(x),varRcpp(x))
 ## TRUE
-@
+```
 
+\paragraph{Rcpp Extensions}
 
-
-\paragraph{Rcpp Extensions}~
-  \newline
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 // Enable C++11
 // [[Rcpp::plugins(cpp11)]]
 
@@ -293,13 +307,11 @@ all.equal(muRcpp(x), mean(x)); all.equal(var(x),varRcpp(x))
 // Requires different header file from Rcpp.h
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
-@
+```
 
+\paragraph{Rcpp sugar}
 
-
-\paragraph{Rcpp sugar}~
-  \newline
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 NumericVector x = NumericVector::create(
   -2.0, -1.0, 0.0, 1.0, 2.0 );
 IntegerVector y = IntegerVector::create(
@@ -330,13 +342,11 @@ NumericVector xx = rep_len( x, 10 );
 NumericVector xx = rep_each( x, 3 );
 
 IntegerVector yy = rev( y );
-@
+```
 
+\paragraph{Random functions}
 
-
-\paragraph{Random functions}~
-  \newline
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 // Set seed
 RNGScope scope;
 
@@ -367,15 +377,13 @@ NumericVector yy = dnorm(quants, 0.0, 2.0, true) ;
 
 // To get original R api, use Rf_*
 double zz = Rf_rnorm(0, 2);
-@
-
-
+```
 
 \newpage
 
-\paragraph{Environment}~
-    \newline
-<<lang=cpp>>=
+\paragraph{Environment}
+
+```{Rcpp, eval = FALSE}
 // Obtain an R environment
 Environment stats("package:stats");
 Environment env( 2 ); // by position
@@ -413,11 +421,11 @@ bool b = glob.bindingIsActive("foo");
 // Retrieve related environments
 Environment e = stats.parent();
 Environment e = glob.new_child();
-@
+```
 
-\paragraph{Calling Functions in R}~
-  \newline
-<<lang=cpp>>=
+\paragraph{Calling Functions in R}
+
+```{Rcpp, eval = FALSE}
 // Do NOT expect to have a performance gain
 // when calling R functions from R! 
 
@@ -433,16 +441,18 @@ NumericVector callFunction(NumericVector x,
     return res;
 }
 
-## In R:
+/***R
+## The following is R code.
 x = 1:5
 callFunction(x, sum)
-@
+*/
+```
 
 \newpage
 
-\paragraph{Modules}~
-  \newline
-<<lang=cpp>>=
+\paragraph{Modules}
+
+```{Rcpp, eval = FALSE}
 // Warning -- At present, module-based objects do not persist across quit(save="yes")/reload cycles.  To be safe, save results to R objects and remove module objects before exiting R.
 
 // To create a module-containing package from R, use:
@@ -480,12 +490,11 @@ RCPP_MODULE(mod_bar) {
     "Docstring for stats")
 ;}
 
+/***R
 ## The following is R code.
 require(mypackage); show(Bar)
 b <- new(Bar, 10);  b$x <- 10
 b_persist <- list(stats=b$stats(), x=b$x)
 rm(b)
-@
-
-
-\end{document}
+*/
+```
