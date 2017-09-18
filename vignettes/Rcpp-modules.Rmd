@@ -1,63 +1,84 @@
-% !Rnw driver = highlight::HighlightWeaveLatex()
-\documentclass[10pt]{article}
-%\VignetteIndexEntry{Rcpp-modules}
-%\VignetteEngine{highlight::highlight}
-%\VignetteKeywords{Rcpp, module}
-%\VignetteDepends{Rcpp}
+---
+title: |
+       | Exposing \proglang{C++} functions and classes with \pkg{Rcpp} modules
 
-\usepackage[USletter]{vmargin}
-\setmargrb{0.75in}{0.75in}{0.75in}{0.75in}
+# Use letters for affiliations
+author:
+  - name: Dirk Eddelbuettel
+    affiliation: a
+  - name: Romain Francois
+    affiliation: a
 
-\usepackage{color, alltt}
-\usepackage[authoryear,round,longnamesfirst]{natbib}
-\usepackage[colorlinks]{hyperref}
-\definecolor{link}{rgb}{0,0,0.3}	%% next few lines courtesy of RJournal.sty
-\hypersetup{
-    colorlinks,%
-    citecolor=link,%
-    filecolor=link,%
-    linkcolor=link,%
-    urlcolor=link
-}
+address:
+  - code: a
+    address: \url{http://dirk.eddelbuettel.com}
+  - code: b
+    address: \url{https://romain.rbind.io/}
 
-\usepackage{microtype}                     %% cf http://www.khirevich.com/latex/microtype/
-\usepackage[T1]{fontenc}		   %% cf http://www.khirevich.com/latex/font/
-\usepackage[bitstream-charter]{mathdesign} %% cf http://www.khirevich.com/latex/font/
+# For footer text
+lead_author_surname: Eddelbuettel and Francois
 
-\newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\proglang}[1]{\textsf{#1}}
-\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+# Place DOI URL or CRAN Package URL here
+doi: "https://cran.r-project.org/package=Rcpp"
 
-%% This corresponds to setting boxes=TRUE for highlight
-\newsavebox{\hlbox}
-\definecolor{hlBg}{rgb}{0.949019607843137,0.949019607843137,0.949019607843137}
-\definecolor{hlBd}{rgb}{0.9,0.9,0.9} % border
-\renewenvironment{Hchunk}{\vspace{0.5em}\noindent\begin{lrbox}{\hlbox}\begin{minipage}[b]{.9\textwidth}}%
-    {\end{minipage}\end{lrbox}\fcolorbox{hlBd}{hlBg}{\usebox{\hlbox}}\vspace{0.5em}}
-
-<<echo=FALSE,print=FALSE>>=
-suppressMessages(require(Rcpp))
-prettyVersion <- packageDescription("Rcpp")$Version
-prettyDate <- format(Sys.Date(), "%B %e, %Y")
-@
-
-\author{Dirk Eddelbuettel \and Romain Fran\c{c}ois}
-\title{Exposing \proglang{C++} functions and classes with \pkg{Rcpp} modules}
-\date{\pkg{Rcpp} version \Sexpr{prettyVersion} as of \Sexpr{prettyDate}}
-
-\begin{document}
-\maketitle
-
-\abstract{
-  \noindent
+# Abstract
+abstract: |
   This note discusses \textsl{Rcpp modules}. \textsl{Rcpp modules} allow programmers to
   expose \proglang{C++} functions and classes to \proglang{R} with relative
   ease.  \textsl{Rcpp modules} are inspired from the \pkg{Boost.Python}
   \proglang{C++} library \citep{Abrahams+Grosse-Kunstleve:2003:Boost.Python}
   which provides similar features for \proglang{Python}.
-}
 
-\section{Motivation}
+# Optional: Acknowledgements
+# acknowledgements: |
+
+# Optional: One or more keywords
+keywords:
+  - Rcpp
+  - modules
+  - r
+  - cpp
+
+# Font size of the document, values of 9pt (default), 10pt, 11pt and 12pt
+fontsize: 9pt
+
+# Optional: Force one-column layout, default is two-column
+#one_column: true
+
+# Optional: Enables lineo mode, but only if one_column mode is also true
+#lineno: true
+
+# Optional: Enable one-sided layout, default is two-sided
+#one_sided: true
+
+# Optional: Bibliography
+bibliography: '`r Rcpp:::bib()`.bib'
+
+# Optional: Enable a 'Draft' watermark on the document
+#watermark: false
+
+# Customize footer, eg by referencing the vignette
+footer_contents: "Rcpp Vignette"
+
+# Produce a pinp document
+output: pinp::pinp
+
+header-includes:
+  \newcommand{\proglang}[1]{\textsf{#1}}
+  \newcommand{\pkg}[1]{\textbf{#1}}
+  \newcommand{\faq}[1]{FAQ~\ref{#1}}
+  \newcommand{\rdoc}[2]{\href{http://www.rdocumentation.org/packages/#1/functions/#2}{\code{#2}}}
+  \newcommand{\sugar}{\textsl{Rcpp sugar}~}
+  \newcommand{\ith}{\textsl{i}-\textsuperscript{th}}
+
+vignette: >
+  %\VignetteIndexEntry{Rcpp-modules}
+  %\VignetteKeywords{Rcpp, modules, r, cpp}
+  %\VignettePackage{Rcpp}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+# Motivation
 
 Exposing \proglang{C++} functionality to \proglang{R} is greatly facilitated
 by the \pkg{Rcpp} package and its underlying \proglang{C++} library
@@ -65,37 +86,37 @@ by the \pkg{Rcpp} package and its underlying \proglang{C++} library
 \proglang{R} and \proglang{C++} integration by replacing the traditional
 \proglang{R} Application Programming Interface (API) described in
 `\textsl{Writing R Extensions}' \citep{R:Extensions} with a consistent set of \proglang{C++}
-classes. The `\textsl{Rcpp-introduction}' vignette \citep{CRAN:Rcpp,JSS:Rcpp} describes the API and
+classes. The '\textsl{Rcpp-introduction}' vignette \citep{CRAN:Rcpp,JSS:Rcpp} describes the API and
 provides an introduction to using \pkg{Rcpp}.
 
 These \pkg{Rcpp} facilities offer a lot of assistance to the programmer
 wishing to interface \proglang{R} and \proglang{C++}. At the same time, these
 facilities are limited as they operate on a function-by-function basis. The
-programmer has to implement a \code{.Call} compatible function (to
+programmer has to implement a `.Call` compatible function (to
 conform to the \proglang{R} API) using classes of the \pkg{Rcpp} API as
 described in the next section.
 
-\subsection{Exposing functions using \pkg{Rcpp}}
+## Exposing functions using \pkg{Rcpp}
 
 Exposing existing \proglang{C++} functions to \proglang{R} through \pkg{Rcpp}
 usually involves several steps. One approach is to write an additional wrapper
 function that is responsible for converting input objects to the appropriate
 types, calling the actual worker function and converting the results back to
-a suitable type that can be returned to \proglang{R} (\texttt{SEXP}).
-Consider the \texttt{norm} function below:
+a suitable type that can be returned to \proglang{R} (`SEXP`).
+Consider the `norm` function below:
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 double norm( double x, double y ) {
     return sqrt( x*x + y*y );
 }
-@
+```
 
-This simple function does not meet the requirements set by the \texttt{.Call}
+This simple function does not meet the requirements set by the `.Call`
 convention, so it cannot be called directly by \proglang{R}. Exposing the
 function involves writing a simple wrapper function
-that does match the \texttt{.Call} requirements. \pkg{Rcpp} makes this easy.
+that does match the `.Call` requirements. \pkg{Rcpp} makes this easy.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 using namespace Rcpp;
 RcppExport SEXP norm_wrapper(SEXP x_, SEXP y_) {
     // step 0: convert input to C++ types
@@ -107,45 +128,45 @@ RcppExport SEXP norm_wrapper(SEXP x_, SEXP y_) {
     // step 2: return the result as a SEXP
     return wrap( res );
 }
-@
+```
 
-Here we use the (templated) \pkg{Rcpp} converter \texttt{as()} which can
-transform from a \texttt{SEXP} to a number of different \proglang{C++} and
-\pkg{Rcpp} types. The \pkg{Rcpp} function \texttt{wrap()} offers the opposite
-functionality and converts many known types to a \texttt{SEXP}.
+Here we use the (templated) \pkg{Rcpp} converter `as()` which can
+transform from a `SEXP` to a number of different \proglang{C++} and
+\pkg{Rcpp} types. The \pkg{Rcpp} function `wrap()` offers the opposite
+functionality and converts many known types to a `SEXP`.
 
 This process is simple enough, and is used by a number of CRAN packages.
 However, it requires direct involvement from the programmer, which quickly
 becomes tiresome when many functions are involved. \textsl{Rcpp modules}
 provides a much more elegant and unintrusive way to expose \proglang{C++}
-functions such as the \texttt{norm} function shown above to \proglang{R}.
+functions such as the `norm` function shown above to \proglang{R}.
 
 We should note that \pkg{Rcpp} now has \textsl{Rcpp attributes} which extends
 certain aspect of \textsl{Rcpp modules} and makes binding to simple functions
 such as this one even easier.  With \textsl{Rcpp attribues} we can just write
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 # include <Rcpp.h>
 
 // [[Rcpp::export]]
 double norm(double x, double y) {
     return sqrt(x*x + y*y);
 }
-@
+```
 
 See the corresponding vignette \citep{CRAN:Rcpp:Attributes} for details, but
 read on for \textsl{Rcpp modules} which contains to provide features not
 covered by \textsl{Rcpp attributes}, particularly when it comes to binding
 entire C++ classes and more.
 
-\subsection{Exposing classes using Rcpp}
+## Exposing classes using Rcpp
 
 Exposing \proglang{C++} classes or structs is even more of a challenge because it
 requires writing glue code for each member function that is to be exposed.
 
-Consider the simple \texttt{Uniform} class below:
+Consider the simple `Uniform` class below:
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 class Uniform {
 public:
     Uniform(double min_, double max_) : min(min_), max(max_) {}
@@ -158,15 +179,15 @@ public:
 private:
     double min, max;
 };
-@
+```
 
 To use this class from R, we at least need to expose the constructor and
-the \texttt{draw} method. External pointers
+the `draw` method. External pointers
 \citep{R:Extensions} are the perfect vessel for this, and using the
-\texttt{Rcpp:::XPtr} template from \pkg{Rcpp} we can expose the class
+`Rcpp:::XPtr` template from \pkg{Rcpp} we can expose the class
 with these two functions:
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 using namespace Rcpp;
 
 /// create an external pointer to a Uniform object
@@ -196,28 +217,31 @@ RcppExport SEXP Uniform__draw( SEXP xp, SEXP n_ ) {
     // return the result to R
     return res;
 }
-@
+```
 
 As it is generally a bad idea to expose external pointers `as is',
 they usually get wrapped as a slot of an S4 class.
 
-Using \code{cxxfunction()} from the \pkg{inline} package, we can build this
+Using `cxxfunction()` from the \pkg{inline} package, we can build this
 example on the fly. Suppose the previous example code assigned to a text variable
-\texttt{unifModcode}, we could then do
+`unifModcode`, we could then do
 
-%% DE 21 Sep 2013: there must a bug somewhere in the vignette processing
-%%                 as the following example produces only empty lines preceded
-%%                 by '+' -- same for 0.10.4 release and current 0.10.5 pre-release
-%%                 hence shortened example to not show code again
-<<eval=FALSE>>=
+<!--
+DE 21 Sep 2013: there must a bug somewhere in the vignette processing
+             as the following example produces only empty lines preceded
+             by '+' -- same for 0.10.4 release and current 0.10.5 pre-release
+             hence shortened example to not show code again
+-->
+
+```{r, eval=FALSE}
 f1 <- cxxfunction( , "", includes = unifModCode, plugin = "Rcpp" )
 getDynLib(f1)  ## will display information about 'f1' just created
-@
+```
 
 The following listing shows some \textsl{manual} wrapping to access the code,
 we will see later how this can be automated:
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 setClass( "Uniform", representation( pointer = "externalptr" ) )
 
 # helper
@@ -237,37 +261,36 @@ setMethod( "initialize", "Uniform", function(.Object, ...) {
 
 u <- new( "Uniform", 0, 10 )
 u$draw( 10L )
-@
+```
 
 \pkg{Rcpp} considerably simplifies the code that would
 be involved for using external pointers with the traditional \proglang{R} API.
 Yet this still involves a lot of mechanical code that quickly
 becomes hard to maintain and error prone.
-\textsl{Rcpp modules} offer an elegant way to expose the \texttt{Uniform}
+\textsl{Rcpp modules} offer an elegant way to expose the `Uniform`
 class in a way that makes both the internal
 \proglang{C++} code and the \proglang{R} code easier.
 
 
 
-\section{Rcpp modules}
-\label{sec:modules}
+# Rcpp modules {#sec:modules}
 
 The design of Rcpp modules has been influenced by \proglang{Python} modules which are generated by the
-\texttt{Boost.Python} library \citep{Abrahams+Grosse-Kunstleve:2003:Boost.Python}.
+`Boost.Python` library \citep{Abrahams+Grosse-Kunstleve:2003:Boost.Python}.
 Rcpp modules provide a convenient and easy-to-use way
 to expose \proglang{C++} functions and classes to \proglang{R}, grouped
 together in a single entity.
 
-A Rcpp module is created in a \texttt{cpp} file using the \texttt{RCPP\_MODULE}
+A Rcpp module is created in a `cpp` file using the `RCPP\_MODULE`
 macro, which then provides declarative code of what the module
 exposes to \proglang{R}.
 
-\subsection{Exposing \proglang{C++} functions using Rcpp modules}
+## Exposing \proglang{C++} functions using Rcpp modules
 
-Consider the \texttt{norm} function from the previous section.
+Consider the `norm` function from the previous section.
 We can expose it to \proglang{R} :
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 using namespace Rcpp;
 
 double norm( double x, double y ) {
@@ -277,17 +300,17 @@ double norm( double x, double y ) {
 RCPP_MODULE(mod) {
     function( "norm", &norm );
 }
-@
+```
 
-The code creates an Rcpp module called \texttt{mod}
-that exposes the \texttt{norm} function. \pkg{Rcpp} automatically
+The code creates an Rcpp module called `mod`
+that exposes the `norm` function. \pkg{Rcpp} automatically
 deduces the conversions that are needed for input and output. This alleviates
 the need for a wrapper function using either \pkg{Rcpp} or the \proglang{R} API.
 
 On the \proglang{R} side, the module is retrieved by using the
-\code{Module} function from \pkg{Rcpp}
+`Module` function from \pkg{Rcpp}
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 inc <- '
 using namespace Rcpp;
 
@@ -302,28 +325,28 @@ RCPP_MODULE(mod) {
 
 fx <- cxxfunction(signature(), plugin="Rcpp", include=inc)
 mod <- Module("mod", getDynLib(fx))
-@
+```
 
 Note that this example assumed that the previous code segment defining the
-module was returned by the \code{cxxfunction()} (from the \pkg{inline}
-package) as callable R function \code{fx} from which we can extract the
-relevant pointer using \code{getDynLib()}.  In the case of using Rcpp modules
+module was returned by the `cxxfunction()` (from the \pkg{inline}
+package) as callable R function `fx` from which we can extract the
+relevant pointer using `getDynLib()`.  In the case of using Rcpp modules
 via a package (which is detailed in Section~\ref{sec:package} below), modules
 are actually loaded differently and we would have used
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 require(nameOfMyModulePackage)
 mod <- new( mod )
 mod$norm( 3, 4 )
-@
+```
 
 where the module is loaded upon startup and we use the constructor
 directly. More details on this aspect follow below.
 
-A module can contain any number of calls to \texttt{function} to register
+A module can contain any number of calls to `function` to register
 many internal functions to \proglang{R}. For example, these 6 functions :
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 std::string hello() {
     return "hello";
 }
@@ -347,11 +370,11 @@ void bla1( int x) {
 void bla2( int x, double y) {
     Rprintf( "hello (x = %d, y = %5.2f)\\n", x, y );
 }
-@
+```
 
 can be exposed with the following minimal code:
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 RCPP_MODULE(yada) {
     using namespace Rcpp;
 
@@ -362,11 +385,11 @@ RCPP_MODULE(yada) {
     function("bla1"  , &bla1 );
     function("bla2"  , &bla2 );
 }
-@
+```
 
 which can then be used from \proglang{R}:
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 require( Rcpp )
 
 yd <- Module("yada", getDynLib(fx))
@@ -376,13 +399,13 @@ yd$hello()
 yd$bla()
 yd$bla1(2L)
 yd$bla2(2L, 5.0)
-@
+```
 
 In the case of a package (as for example the one created by
-\code{Rcpp.package.skeleton()} with argument \code{module=TRUE}; more on that
+`Rcpp.package.skeleton()` with argument `module=TRUE`; more on that
 below), we can use
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 require(myModulePackage)    ## or whichever name was chose
 
 bar(2L)
@@ -391,29 +414,27 @@ hello()
 bla()
 bla1(2L)
 bla2(2L, 5.0)
-@
+```
 
 
 The requirements for a function to be exposed to \proglang{R} via Rcpp modules
 are:
-\begin{itemize}
-\item The function takes between 0 and 65 parameters.
-\item The type of each input parameter must be manageable by the \texttt{Rcpp::as}
-template.
-\item The return type of the function must be either \texttt{void} or any type that
-can be managed by the \texttt{Rcpp::wrap} template.
-\item The function name itself has to be unique in the module.
+
+- The function takes between 0 and 65 parameters.
+- The type of each input parameter must be manageable by the `Rcpp::as` template.
+- The return type of the function must be either `void` or any type that
+  can be managed by the `Rcpp::wrap` template.
+- The function name itself has to be unique in the module.
   In other words, no two functions with
   the same name but different signatures are allowed. C++ allows overloading
   functions. This might be added in future versions of modules.
-\end{itemize}
 
-\subsubsection{Documentation for exposed functions using Rcpp modules}
+### Documentation for exposed functions using Rcpp modules
 
 In addition to the name of the function and the function pointer, it is possible
-to pass a short description of the function as the third parameter of \texttt{function}.
+to pass a short description of the function as the third parameter of `function`.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 using namespace Rcpp;
 
 double norm( double x, double y ) {
@@ -423,22 +444,22 @@ double norm( double x, double y ) {
 RCPP_MODULE(mod) {
     function( "norm", &norm, "Provides a simple vector norm" );
 }
-@
+```
 
 The description is used when displaying the function to the R prompt:
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 mod <- Module("mod", getDynLib(fx))
 show(mod$norm)
-@
+```
 
-\subsubsection{Formal arguments specification}
+### Formal arguments specification
 
-\texttt{function} also gives the possibility to specify the formal arguments
+`function` also gives the possibility to specify the formal arguments
 of the R function that encapsulates the C++ function, by passing
-a \texttt{Rcpp::List} after the function pointer.
+a `Rcpp::List` after the function pointer.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 using namespace Rcpp;
 
 double norm( double x, double y ) {
@@ -451,21 +472,21 @@ RCPP_MODULE(mod_formals) {
              List::create( _["x"] = 0.0, _["y"] = 0.0 ),
              "Provides a simple vector norm");
 }
-@
+```
 
 A simple usage example is provided below:
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 norm <- mod$norm
 norm()
 norm( y = 2 )
 norm( x = 2, y = 3 )
 args( norm )
-@
+```
 
 To set formal arguments without default values, simply omit the rhs.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 using namespace Rcpp;
 
 double norm( double x, double y ) {
@@ -477,19 +498,19 @@ RCPP_MODULE(mod_formals2) {
              List::create( _["x"], _["y"] = 0.0 ),
              "Provides a simple vector norm");
 }
-@
+```
 
 This can be used as follows:
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 norm <- mod$norm
 args(norm)
-@
+```
 
-The ellipsis (\texttt{...}) can be used to denote that additional arguments
+The ellipsis (`...`) can be used to denote that additional arguments
 are optional; it does not take a default value.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 using namespace Rcpp;
 
 double norm( double x, double y ) {
@@ -501,24 +522,24 @@ RCPP_MODULE(mod_formals3) {
              List::create( _["x"], _["..."] ),
              "documentation for norm");
 }
-@
-<<eval=FALSE>>=
+```
+```{r, eval=FALSE}
 norm <- mod$norm
 args( norm )
-@
+```
 
 
-\subsection{Exposing \proglang{C++} classes using Rcpp modules}
+## Exposing \proglang{C++ classes using Rcpp modules}
 
 Rcpp modules also provide a mechanism for exposing \proglang{C++} classes, based
 on the reference classes introduced in R 2.12.0.
 
-\subsubsection{Initial example}
+### Initial example
 
-A class is exposed using the \texttt{class\_} keyword. The \texttt{Uniform}
+A class is exposed using the `class\_` keyword. The `Uniform`
 class may be exposed to \proglang{R} as follows:
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 using namespace Rcpp;
 class Uniform {
 public:
@@ -550,9 +571,9 @@ RCPP_MODULE(unif_module) {
     ;
 
 }
-@
+```
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 ## assumes   fx_unif <- cxxfunction(...)   has ben run
 unif_module <- Module( "unif_module", getDynLib(fx_unif ) )
 Uniform <- unif_module$Uniform
@@ -562,50 +583,50 @@ u$range()
 u$max <- 1
 u$range()
 u$draw( 10 )
-@
+```
 
-\texttt{class\_} is templated by the \proglang{C++} class or struct
+`class\_` is templated by the \proglang{C++} class or struct
 that is to be exposed to \proglang{R}.
-The parameter of the \texttt{class\_<Uniform>} constructor is the name we will
+The parameter of the `class\_<Uniform>` constructor is the name we will
 use on the \proglang{R} side. It usually makes sense to use the same name as the class
 name. While this is not enforced, it might be useful when exposing a class
 generated from a template.
 
 Then constructors, fields and methods are exposed.
 
-\subsubsection{Exposing constructors using Rcpp modules}
+### Exposing constructors using Rcpp modules
 
 Public constructors that take from 0 and 6 parameters can be exposed
-to the R level using the \texttt{.constuctor} template method of \texttt{.class\_}.
+to the R level using the `.constuctor` template method of `.class\_`.
 
-Optionally, \texttt{.constructor} can take a description as the first argument.
+Optionally, `.constructor` can take a description as the first argument.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
     .constructor<double,double>("sets the min and max value of the distribution")
-@
+```
 
 Also, the second argument can be a function pointer (called validator)
 matching the following type :
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 typedef bool (*ValidConstructor)(SEXP*,int);
-@
+```
 
 The validator can be used to implement dispatch to the appropriate constructor,
 when multiple constructors taking the same number of arguments are exposed.
 The default validator always accepts the constructor as valid if it is passed
 the appropriate number of arguments. For example, with the call above, the default
-validator accepts any call from R with two \texttt{double} arguments (or
-arguments that can be cast to \texttt{double}).
+validator accepts any call from R with two `double` arguments (or
+arguments that can be cast to `double`).
 
 TODO: include validator example here
 
-\subsubsection{Exposing fields and properties}
+### Exposing fields and properties
 
-\texttt{class\_} has three ways to expose fields and properties, as
+`class\_` has three ways to expose fields and properties, as
 illustrated in the example below :
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 using namespace Rcpp;
 class Foo {
 public:
@@ -633,61 +654,61 @@ RCPP_MODULE(mod_foo) {
     .property( "z", &Foo::get_z, &Foo::set_z )
     ;
 }
-@
+```
 
-The \texttt{.field} method exposes a public field with read/write access from R.
-\texttt{field} accepts an extra parameter to give a short description of the
+The `.field` method exposes a public field with read/write access from R.
+`field` accepts an extra parameter to give a short description of the
 field:
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
     .field( "x", &Foo::x, "documentation for x" )
-@
+```
 
-The \texttt{.field\_readonly} exposes a public field with read-only access from R.
+The `.field\_readonly` exposes a public field with read-only access from R.
 It also accepts the description of the field.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
     .field_readonly( "y", &Foo::y, "documentation for y" )
-@
+```
 
-The \texttt{.property} method allows indirect access to fields through
+The `.property` method allows indirect access to fields through
 a getter and a setter. The setter is optional, and the property is considered
 read-only if the setter is not supplied. A description of the property is also
 allowed:
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
     // with getter and setter
     .property( "z", &Foo::get_z, &Foo::set_z, "Documentation for z" )
 
     // with only getter
     .property( "z", &Foo::get_z, "Documentation for z" )
-@
+```
 
 The type of the field (\textbf{T}) is deduced from the return type of the getter, and if a
 setter is given its unique parameter should be of the same type.
 
 Getters can be member functions taking no parameter and returning a \textbf{T}
-(for example \texttt{get\_z} above), or
+(for example `get\_z` above), or
 a free function taking a pointer to the exposed
 class and returning a \textbf{T}, for example:
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 double z_get( Foo* foo ) { return foo->get_z(); }
-@
+```
 
-Setters can be either a member function taking a \texttt{T} and returning void, such
-as \texttt{set\_z} above, or a free function taking a pointer to the target
+Setters can be either a member function taking a `T` and returning void, such
+as `set\_z` above, or a free function taking a pointer to the target
 class and a \textbf{T} :
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 void z_set( Foo* foo, double z ) { foo->set_z(z); }
-@
+```
 
 Using properties gives more flexibility in case field access has to be tracked
 or has impact on other fields. For example, this class keeps track of how many times
-the \texttt{x} field is read and written.
+the `x` field is read and written.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 class Bar {
 public:
 
@@ -722,75 +743,74 @@ RCPP_MODULE(mod_bar) {
     .method( "stats", &Bar::stats )
     ;
 }
-@
+```
 
 Here is a simple usage example:
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 Bar <- mod_bar$Bar
 b <- new( Bar, 10 )
 b$x + b$x
 b$stats()
 b$x <- 10
 b$stats()
-@
+```
 
-\subsubsection{Exposing methods using Rcpp modules}
+### Exposing methods using Rcpp modules
 
-\texttt{class\_} has several overloaded and templated \texttt{.method}
+`class\_` has several overloaded and templated `.method`
 functions allowing the programmer to expose a method associated with the class.
 
-A legitimate method to be exposed by \texttt{.method} can be:
-\begin{itemize}
-\item A public member function of the class, either const or non const, that
-returns void or any type that can be handled by \texttt{Rcpp::wrap}, and that
-takes between 0 and 65 parameters whose types can be handled by \texttt{Rcpp::as}.
-\item A free function that takes a pointer to the target class as its first
-parameter, followed by 0 or more (up to 65) parameters that can be handled by
-\texttt{Rcpp::as} and returning a type that can be handled by \texttt{Rcpp::wrap}
-or void.
-\end{itemize}
+A legitimate method to be exposed by `.method` can be:
 
-\paragraph{Documenting methods} \texttt{.method} can also include
+- A public member function of the class, either const or non const, that
+  returns void or any type that can be handled by `Rcpp::wrap`, and that
+  takes between 0 and 65 parameters whose types can be handled by `Rcpp::as`.
+- A free function that takes a pointer to the target class as its first
+  parameter, followed by 0 or more (up to 65) parameters that can be handled by
+  `Rcpp::as` and returning a type that can be handled by `Rcpp::wrap`
+  or void.
+
+\paragraph{Documenting methods} `.method` can also include
 a short documentation of the method, after the
 method (or free function) pointer.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 .method("stats", &Bar::stats,
         "vector indicating the number of times x has been read and written" )
-@
+```
 
 TODO: mention overloading, need good example.
 
 
 \paragraph{Const and non-const member functions}
 
-\texttt{method} is able to expose both \texttt{const} and \texttt{non const}
+`method` is able to expose both `const` and `non const`
 member functions of a class. There are however situations where
 a class defines two versions of the same method, differing only in their
-signature by the \texttt{const}-ness. It is for example the case of the
-member functions \texttt{back} of the \texttt{std::vector} template from
+signature by the `const`-ness. It is for example the case of the
+member functions `back` of the `std::vector` template from
 the STL.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 reference back ( );
 const_reference back ( ) const;
-@
+```
 
-To resolve the ambiguity, it is possible to use \texttt{const\_method}
-or \texttt{nonconst\_method} instead of \texttt{method} in order
+To resolve the ambiguity, it is possible to use `const\_method`
+or `nonconst\_method` instead of `method` in order
 to restrict the candidate methods.
 
 \paragraph{Special methods}
 
-\pkg{Rcpp} considers the methods \texttt{[[} and \texttt{[[<-} special,
+\pkg{Rcpp} considers the methods `[[` and `[[<-` special,
 and promotes them to indexing methods on the \proglang{R} side.
 
-\subsubsection{Object finalizers}
+### Object finalizers
 
-The \texttt{.finalizer} member function of \texttt{class\_} can be used to
+The `.finalizer` member function of `class\_` can be used to
 register a finalizer. A finalizer is a free function that takes a pointer
-to the target class and return \texttt{void}. The finalizer is called
+to the target class and return `void`. The finalizer is called
 before the destructor and so operates on a valid object of the target class.
 
 It can be used to perform operations, releasing resources, etc ...
@@ -798,34 +818,34 @@ It can be used to perform operations, releasing resources, etc ...
 The finalizer is called automatically when the \proglang{R} object that encapsulates
 the \proglang{C++} object is garbage collected.
 
-\subsubsection{S4 dispatch}
+### S4 dispatch
 
-When a \proglang{C++} class is exposed by the \texttt{class\_} template,
+When a \proglang{C++} class is exposed by the `class\_` template,
 a new S4 class is registered as well. The name of the S4 class is
 obfuscated in order to avoid name clashes (i.e. two modules exposing the
 same class).
 
 This allows implementation of \proglang{R}-level
-(S4) dispatch. For example, one might implement the \texttt{show}
-method for \proglang{C++} \texttt{World} objects:
+(S4) dispatch. For example, one might implement the `show`
+method for \proglang{C++} `World` objects:
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 setMethod( "show", yada$World , function(object) {
     msg <- paste( "World object with message : ", object$greet() )
     writeLines( msg )
 } )
-@
+```
 
 TODO: mention R inheritance (John ?)
 
-\subsubsection{Full example}
+### Full example
 
-% TODO: maybe replace this by something from wls or RcppModels ?
+<!-- TODO: maybe replace this by something from wls or RcppModels ? -->
 
 The following example illustrates how to use Rcpp modules to expose
-the class \texttt{std::vector<double>} from the STL.
+the class `std::vector<double>` from the STL.
 
-<<lang=cpp>>=
+```{Rcpp, eval = FALSE}
 typedef std::vector<double> vec; 		// convenience typedef
 void vec_assign( vec* obj, Rcpp::NumericVector data ) {  // helpers
     obj->assign( data.begin(), data.end() );
@@ -874,9 +894,9 @@ RCPP_MODULE(mod_vec) {
     .method( "[[<-", &vec_set )
     ;
 }
-@
+```
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 ## for code compiled on the fly using cxxfunction() into 'fx_vec', we use
 mod_vec <- Module( "mod_vec", getDynLib(fx_vec), mustStart = TRUE )
 vec <- mod_vec$vec
@@ -890,34 +910,33 @@ v$size()
 v$capacity()
 v[[ 0L ]]
 v$as.vector()
-@
+```
 
-\section{Using modules in other packages}
-\label{sec:package}
+# Using modules in other packages {#sec:package}
 
-\subsection{Namespace import/export}
+## Namespace import/export
 
-\subsubsection{Import all functions and classes}
+### Import all functions and classes
 
 When using \pkg{Rcpp} modules in a packages, the client package needs to
 import \pkg{Rcpp}'s namespace. This is achieved by adding the
-following line to the \texttt{NAMESPACE} file.
+following line to the `NAMESPACE` file.
 
-<<echo=FALSE,eval=TRUE>>=
+```{r, echo=FALSE,eval=TRUE}
 options( prompt = " ", continue = " " )
-@
+```
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 import(Rcpp)
-@
+```
 
 In some case we have found that explicitly naming a symbol can be preferable:
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 import(Rcpp, evalCpp)
-@
+```
 
-\subsubsection{Load the module}
+### Load the module
 
 \paragraph{Deprecated older method using loadRcppModules} 
 
@@ -925,129 +944,122 @@ Note: This approach is deprecated as of Rcpp 0.12.5, and now triggers a warning
 message.  Eventually this function will be withdrawn.
 
 The simplest way to load all functions and classes from a module directly
-into a package namespace used to be to use the \code{loadRcppModules} function
-within the \code{.onLoad} body.
+into a package namespace used to be to use the `loadRcppModules` function
+within the `.onLoad` body.
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 .onLoad <- function(libname, pkgname) {
     loadRcppModules()
 }
-@
+```
 
-This will look in the package's DESCRIPTION file for the \texttt{RcppModules}
+This will look in the package's DESCRIPTION file for the `RcppModules`
 field, load each declared module and populate their contents into the
 package's namespace. For example, both the \pkg{testRcppModule} package
 (which is part of large unit test suite for \pkg{Rcpp}) and the package
-created via \code{Rcpp.package.skeleton("somename", module=TRUE)} have this
+created via `Rcpp.package.skeleton("somename", module=TRUE)` have this
 declaration:
 
-\begin{verbatim}
+```
 RcppModules: yada, stdVector, NumEx
-\end{verbatim}
+```
 
-The \code{loadRcppModules} function has a single argument \texttt{direct}
-with a default value of \texttt{TRUE}. With this default value, all content
+The `loadRcppModules` function has a single argument `direct`
+with a default value of `TRUE`. With this default value, all content
 from the module is exposed directly in the package namespace. If set to
-\texttt{FALSE}, all content is exposed as components of the module.
+`FALSE`, all content is exposed as components of the module.
 
 \paragraph{Preferred current method using loadModule}   
 
 Starting with release 0.9.11, an alternative is provided by the
-\code{loadModule()} function which takes the module name as an argument.
-It can be placed in any \code{.R} file in the package. This is useful as it allows to load
+`loadModule()` function which takes the module name as an argument.
+It can be placed in any `.R` file in the package. This is useful as it allows to load
 the module from the same file as some auxiliary \proglang{R} functions using the
-module. For the example module, the equivalent code to the \code{.onLoad()}
+module. For the example module, the equivalent code to the `.onLoad()`
 use shown above then becomes
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 loadModule("yada")
 loadModule("stdVector")
 loadModule("NumEx")
-@
+```
 
 This feature is also used in the new Rcpp Classes introduced with Rcpp 0.9.11.
 
-\subsubsection{Just expose the module}
+### Just expose the module
 
 Alternatively, it is possible to just expose the module to the user of the package,
 and let them extract the functions and classes as needed. This uses lazy loading
 so that the module is only loaded the first time the user attempts to extract
 a function or a class with the dollar extractor.
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 yada <- Module( "yada" )
 
 .onLoad <- function(libname, pkgname) {
     # placeholder
 }
-@
+```
 
-<<echo=FALSE,eval=TRUE>>=
+```{r, echo=FALSE,eval=TRUE}
 options( prompt = "> ", continue = "+ " )
-@
+```
 
 
-\subsection{Support for modules in skeleton generator}
+## Support for modules in skeleton generator
 
-The \code{Rcpp.package.skeleton} function has been improved to help
-\pkg{Rcpp} modules. When the \texttt{module} argument is set to \texttt{TRUE},
+The `Rcpp.package.skeleton` function has been improved to help
+\pkg{Rcpp} modules. When the `module` argument is set to `TRUE`,
 the skeleton generator installs code that uses a simple module.
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 Rcpp.package.skeleton( "testmod", module = TRUE )
-@
+```
 
 Creating a new package using \textsl{Rcpp modules} is easiest via the call to
-\code{Rcpp.package.skeleton()} with argument \code{module=TRUE} as a working
+`Rcpp.package.skeleton()` with argument `module=TRUE` as a working
 package with three example Modules results.
 
-\subsection{Module documentation}
+## Module documentation
 
-\pkg{Rcpp} defines a \code{prompt} method for the
-\code{Module} class, allowing generation of a skeleton of an Rd
+\pkg{Rcpp} defines a `prompt` method for the
+`Module` class, allowing generation of a skeleton of an Rd
 file containing some information about the module.
 
-<<eval=FALSE>>=
+```{r, eval=FALSE}
 yada <- Module( "yada" )
 prompt( yada, "yada-module.Rd" )
-@
+```
 
 We strongly recommend using a package when working with Modules.  But in case a
 manually compiled shared library has to loaded, the return argument of the
-\texttt{getDynLib()} function can be supplied as the \texttt{PACKAGE} argument to
-the \texttt{Module()} function as well.
+`getDynLib()` function can be supplied as the `PACKAGE` argument to
+the `Module()` function as well.
 
 
-\section{Future extensions}
-\label{sec:future}
+# Future extensions {#sec:future}
 
-\texttt{Boost.Python} has many more features that we would like to port
+`Boost.Python` has many more features that we would like to port
 to Rcpp modules : class inheritance, default arguments, enum
 types, ...
 
-\section{Known shortcomings}
-\label{sec:misfeatures}
+# Known shortcomings {#sec:misfeatures}
 
 There are some things \textsl{Rcpp modules} is not good at:
-\begin{itemize}
-\item serialization and deserialization of objects: modules are
+
+- serialization and deserialization of objects: modules are
   implemented via an external pointer using a memory location, which is
   non-constant and varies between session. Objects have to be re-created,
   which is different from the (de-)serialization that R offers. So these
   objects cannot be saved from session to session.
-\item mulitple inheritance: currently, only simple class structures are
+- mulitple inheritance: currently, only simple class structures are
   representable via \textsl{Rcpp modules}.
-\end{itemize}
 
-\section{Summary}
+# Summary
 
 This note introduced \textsl{Rcpp modules} and illustrated how to expose
 \proglang{C++} function and classes more easily to \proglang{R}.
 We hope that \proglang{R} and \proglang{C++} programmers
 find \textsl{Rcpp modules} useful.
 
-\bibliographystyle{plainnat}
-\bibliography{\Sexpr{Rcpp:::bib()}}
-
-\end{document}
 
