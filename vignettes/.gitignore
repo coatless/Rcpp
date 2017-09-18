@@ -6,4 +6,7 @@ Rcpp-*.blg
 Rcpp-*.log
 Rcpp-*.tex
 Rcpp-*.pdf
+Rcpp-*.xwm
+Rcpp-*.fls
+Rcpp-*.fdb_latexmk
 unitTests-results/
