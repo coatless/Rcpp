@@ -6,7 +6,7 @@ title: |
 author:
   - name: Dirk Eddelbuettel
     affiliation: a
-  - name: Romain Francois
+  - name: Romain François
     affiliation: a
 
 address:
@@ -16,7 +16,7 @@ address:
     address: \url{https://romain.rbind.io/}
 
 # For footer text
-lead_author_surname: Eddelbuettel and Francois
+lead_author_surname: Eddelbuettel and François
 
 # Place DOI URL or CRAN Package URL here
 doi: "https://cran.r-project.org/package=Rcpp"
@@ -29,6 +29,8 @@ abstract: |
 
 # Optional: Acknowledgements
 # acknowledgements: |
+
+numbersections: true
 
 # Optional: One or more keywords
 keywords:
@@ -49,8 +51,14 @@ fontsize: 9pt
 # Optional: Enable one-sided layout, default is two-sided
 #one_sided: true
 
+# Optional: Enable section numbering, default is unnumbered
+#numbersections: true
+
+# Optional: Specify the depth of section number, default is 5
+#secnumdepth: 5
+
 # Optional: Bibliography
-bibliography: '`r Rcpp:::bib()`.bib'
+bibliography: Rcpp
 
 # Optional: Enable a 'Draft' watermark on the document
 #watermark: false
@@ -66,9 +74,7 @@ header-includes:
   \newcommand{\pkg}[1]{\textbf{#1}}
   \newcommand{\faq}[1]{FAQ~\ref{#1}}
   \newcommand{\rdoc}[2]{\href{http://www.rdocumentation.org/packages/#1/functions/#2}{\code{#2}}}
-  \newcommand{\R}[0]{\proglang{R}}
-  \newcommand{\Rs}[0]{\proglang{R }}
-
+  
 vignette: >
   %\VignetteIndexEntry{Rcpp-faq}
   %\VignetteKeywords{Rcpp, faq, r, cpp}
@@ -240,7 +246,11 @@ Template Library to sum the elements of a numeric vector.
 ```{r, eval = FALSE}
 fx <- cxxfunction(signature(x = "numeric"),
     'NumericVector xx(x);
-     return wrap(std::accumulate(xx.begin(), xx.end(), 0.0));',
+     return wrap(
+              std::accumulate(xx.begin(), 
+                              xx.end(),
+                              0.0)
+            );',
     plugin = "Rcpp")
 res <- fx(seq(1, 10, by=0.5))
 res
@@ -263,7 +273,9 @@ the code in a character string in R. This is easily achieved by using
 \rdoc{base}{readLines}:
 
 ```{r, eval=FALSE}
-fx <- cxxfunction(signature(), paste(readLines("myfile.cpp"), collapse="\n"),
+fx <- cxxfunction(signature(),
+                  paste(readLines("myfile.cpp"), 
+                        collapse="\n"),
                   plugin = "Rcpp")
 ```
 
@@ -285,7 +297,9 @@ The example above can now be rewritten as:
 
 ```{r, eval = FALSE}
 cppFunction('double accu(NumericVector x) {
-   return(std::accumulate(x.begin(), x.end(), 0.0));
+   return(
+      std::accumulate(x.begin(), x.end(), 0.0)
+   );
 }')
 res <- accu(seq(1, 10, by=0.5))
 res
@@ -301,7 +315,7 @@ the code therein.
 ## How do I convert my prototyped code to a package? {#from-inline-to-package}
 
 Since release 0.3.5 of \pkg{inline}, one can combine \faq{using-inline} and
-\faq{make-package}. See \verb|help("package.skeleton-methods")| once
+\faq{make-package}. See `help("package.skeleton-methods")` once
 \pkg{inline} is loaded and use the skeleton-generating functionality to
 transform a prototyped function into the minimal structure of a package.
 After that you can proceed with working on the package in the spirit of
@@ -318,7 +332,9 @@ The simplest way may be to work directly with a package.  Changes to both the
 command line via:
 
 ```{bash, eval = FALSE}
-$ R CMD INSTALL mypkg && Rscript --default-packages=mypkg -e 'someFunctionToTickle(3.14)'
+$ R CMD INSTALL mypkg && \
+$ Rscript --default-packages=mypkg -e \
+$         'someFunctionToTickle(3.14)'
 ```
 
 This first installs the packages, and then uses the command-line tool
@@ -329,14 +345,15 @@ expression can contain multiple statements separated by semicolons.
 
 On Linux, one can also use `r` from the `littler` package by Horner
 and Eddelbuettel which is an alternative front end to \proglang{R} designed
-for both \verb|#!| (hashbang) scripting and command-line use. It has slightly
+for both `#!` (hashbang) scripting and command-line use. It has slightly
 faster start-up times than \rdoc{utils}{Rscript}; and both give a guaranteed clean
 slate as a new session is created.
 
 The example then becomes
 
 ```{bash, eval = FALSE}
-$ R CMD INSTALL mypkg && r -l mypkg -e 'someFunctionToTickle(3.14)'
+$ R CMD INSTALL mypkg && \
+$  r -l mypkg -e 'someFunctionToTickle(3.14)'
 ```
 
 The `-l` option calls 'suppressMessages(library(mypkg))' before executing the
@@ -360,8 +377,10 @@ against.
 On the Linux command-line, you can do the following:
 
 ```{bash, eval = FALSE}
-$ export PKG_LIBS=`Rscript -e "Rcpp:::LdFlags()"`  # if Rcpp older than 0.11.0
-$ export PKG_CXXFLAGS=`Rscript -e "Rcpp:::CxxFlags()"`
+$ # if Rcpp older than 0.11.0
+$ export PKG_LIBS=`Rscript -e "Rcpp:::LdFlags()"`
+$ export PKG_CXXFLAGS=\
+$            `Rscript -e "Rcpp:::CxxFlags()"`
 $ R CMD SHLIB myfile.cpp
 ```
 
@@ -370,7 +389,7 @@ which first defines and exports two relevant environment variables which
 settings may have to be used to define the environment variables.
 
 This approach corresponds to the very earliest ways of building programs and
-can still be found in some deprecated documents (as \textit{e.g.} some of
+can still be found in some deprecated documents (as _e.g._ some of
 Dirk's older 'Intro to HPC with R' tutorial slides).  It is still not
 recommended as there are tools and automation mechanisms that can do the work
 for you.
@@ -392,7 +411,7 @@ steps.
 ## But R CMD SHLIB still does not work !
 
 We have had reports in the past where build failures occurred when users had
-non-standard code in their \verb|~/.Rprofile| or `Rprofile.site` (or
+non-standard code in their `~/.Rprofile` or `Rprofile.site` (or
 equivalent) files.
 
 If such code emits text on `stdout`, the frequent and implicit
@@ -456,7 +475,7 @@ manual.
 
 ### Differing macOS R Versions Leading to Binary Failures
 
-There are currently \textit{three} distinct versions of R for macOS.
+There are currently _three_ distinct versions of R for macOS.
 The first version is a legacy version meant for macOS 10.6 (Snow Leopard) -
 10.8 (Mountain Lion). The second version is for more recent system
 macOS 10.9 (Mavericks) and 10.10 (Yosemite). Finally, the third and most
@@ -473,7 +492,7 @@ able to mix. In such cases, it is better to provide collaborators with the
 By default, the macOS operating environment lacks the ability to parallelize
 sections of code using the  \proglang{[OpenMP](http://openmp.org/wp/)}
 standard. Within \proglang{R} 3.4.*, the default developer environment was
-\textit{changed} to allow for \proglang{OpenMP} to be used on macOS by using
+_changed_ to allow for \proglang{OpenMP} to be used on macOS by using
 a non-default toolchain provided by R Core Team maintainers for macOS.
 Having said this, it is still important to protect any reference to
 \proglang{OpenMP} as some users may not yet have the ability to
@@ -498,7 +517,7 @@ Second, when parallelizing portions of code use:
 #endif
 ```
 
-Under this approach, the code will be \textit{safely} parallelized when
+Under this approach, the code will be _safely_ parallelized when
 support exists for \proglang{OpenMP} on Windows, macOS, and Linux.
 
 ### Additional Information and Help
@@ -566,7 +585,7 @@ offered by R (and which is used by \pkg{lme4} and \pkg{Matrix}, as well as by
 programmer, and even frees us from explicit linking instruction. In most
 cases, the files `src/Makevars` and `src/Makevars.win` can now be
 removed. Exceptions are the use of \pkg{RcppArmadillo} (which needs an entry
-\verb|PKG_LIBS=$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)|) and packages linking
+`PKG_LIBS=$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)`) and packages linking
 to external libraries they use.
 
 But for most packages using \pkg{Rcpp}, only two things are required:
@@ -596,7 +615,7 @@ your machine or download the latest. These options are described in-depth
 in [Section C.3 macOS](https://cran.r-project.org/doc/manuals/r-release/R-admin.html#macOS)
 of the [R Installation and Administration](https://cran.r-project.org/doc/manuals/r-release/R-admin.html)
 manual. Please consult this manual for up-to-date information regarding `gfortran`
-binaries on macOS. We have also documented \textit{other} common macOS compile
+binaries on macOS. We have also documented _other_ common macOS compile
 issues in Section \faq{q:OSX}.
 
 # Examples
@@ -630,9 +649,12 @@ which squares its argument:
 
 ```{r, eval = FALSE}
 inc <- 'template <typename T>
-        class square : public std::unary_function<T,T> {
-        public:
-            T operator()( T t) const { return t*t ;}
+        class square :
+          public std::unary_function<T,T> {
+            public:
+              T operator()( T t) const {
+                return t*t;
+              }
         };
        '
 
@@ -641,11 +663,14 @@ src <- '
        int i = Rcpp::as<int>(is);
        square<double> sqdbl;
        square<int> sqint;
-       return Rcpp::DataFrame::create(Rcpp::Named("x", sqdbl(x)),
-                                      Rcpp::Named("i", sqint(i)));
+       return Rcpp::DataFrame::create(
+                    Rcpp::Named("x", sqdbl(x)),
+                    Rcpp::Named("i", sqint(i)));
        '
-fun <- cxxfunction(signature(xs="numeric", is="integer"),
-                   body=src, include=inc, plugin="Rcpp")
+fun <- cxxfunction(signature(xs="numeric",
+                             is="integer"),
+                   body=src, include=inc,
+                   plugin="Rcpp")
 
 fun(2.2, 3L)
 ```
@@ -660,17 +685,21 @@ will even run the R part at the end.
 ```{Rcpp, eval = FALSE}
 #include <Rcpp.h>
 
-template <typename T> class square : public std::unary_function<T,T> {
-public:
-    T operator()( T t) const { return t*t ;}
+template <typename T> class square :
+    public std::unary_function<T,T> {
+      public:
+      T operator()( T t) const { 
+        return t*t ;
+      }
 };
 
 // [[Rcpp::export]]
 Rcpp::DataFrame fun(double x, int i) {
        square<double> sqdbl;
        square<int> sqint;
-       return Rcpp::DataFrame::create(Rcpp::Named("x", sqdbl(x)),
-                                      Rcpp::Named("i", sqint(i)));
+       return Rcpp::DataFrame::create(
+           Rcpp::Named("x", sqdbl(x)),
+           Rcpp::Named("i", sqint(i)));
 }
 
 /*** R
@@ -714,7 +743,9 @@ arma::mat Y = Rcpp::as<arma::mat>(Y_) ;
 arma::colvec z = Rcpp::as<arma::colvec>(z_) ;
 
 // calculate the result
-double result = arma::as_scalar(arma::trans(x) * arma::inv(Y) * z);
+double result = arma::as_scalar(
+                 arma::trans(x) * arma::inv(Y) * z
+                );
 
 // return it to R
 return Rcpp::wrap( result );'
@@ -725,8 +756,11 @@ writeLines(a, file = "myfile.cpp")
 If stored in a file `myfile.cpp`, we can use it via \pkg{inline}:
 
 ```{r, eval = FALSE}
-fx <- cxxfunction(signature(x_="numeric", Y_="matrix", z_="numeric" ),
-                  paste(readLines("myfile.cpp"), collapse="\n"),
+fx <- cxxfunction(signature(x_="numeric", 
+                            Y_="matrix",
+                            z_="numeric" ),
+                  paste(readLines("myfile.cpp"),
+                        collapse="\n"),
                   plugin="RcppArmadillo" )
 fx(1:4, diag(4), 1:4)
 ```
@@ -750,9 +784,12 @@ We can also write the same example for use with Rcpp Attributes:
 // [[Rcpp::depends(RcppArmadillo)]]
 
 // [[Rcpp::export]]
-double fx(arma::colvec x, arma::mat Y, arma::colvec z) {
+double fx(arma::colvec x, arma::mat Y,
+          arma::colvec z) {
     // calculate the result
-    double result = arma::as_scalar(arma::trans(x) * arma::inv(Y) * z);
+    double result = arma::as_scalar(
+        arma::trans(x) * arma::inv(Y) * z
+    );
     return result;
 }
 
@@ -800,7 +837,9 @@ random variable distributed as $N(m,s)$.
 Using Rcpp Attributes, this can be as simple as
 
 ```{r, eval = FALSE}
-cppFunction('Rcpp::NumericVector ff(int n) { return rnorm(n, 0, 100); }')
+cppFunction('Rcpp::NumericVector ff(int n) { 
+              return rnorm(n, 0, 100); 
+            }')
 set.seed(42)
 ff(5)
 ff(5)
@@ -821,10 +860,10 @@ as well as R, and that identical random number draws are obtained.
 
 ```{r, eval = FALSE}
 src <- 'Rcpp::NumericVector v(4);
-        v[0] = R_NegInf;  // -Inf
-        v[1] = NA_REAL;   // NA
-        v[2] = R_PosInf;  // Inf
-        v[3] = 42;        // see the Hitchhiker Guide
+        v[0] = R_NegInf; // -Inf
+        v[1] = NA_REAL;  // NA
+        v[2] = R_PosInf; // Inf
+        v[3] = 42;       // c.f. Hitchhiker Guide
         return Rcpp::wrap(v);'
 fun <- cxxfunction(signature(), src, plugin="Rcpp")
 fun()
@@ -838,10 +877,10 @@ Similarly, for Rcpp Attributes:
 // [[Rcpp::export]]
 Rcpp::NumericVector fun(void) {
     Rcpp::NumericVector v(4);
-    v[0] = R_NegInf;  // -Inf
-    v[1] = NA_REAL;   // NA
-    v[2] = R_PosInf;  // Inf
-    v[3] = 42;        // see the Hitchhiker Guide
+    v[0] = R_NegInf; // -Inf
+    v[1] = NA_REAL;  // NA
+    v[2] = R_PosInf; // Inf
+    v[3] = 42;       // c.f. Hitchhiker Guide
     return v;
 }
 ```
@@ -857,8 +896,10 @@ wonderful Armadillo library described above in \faq{matrix-algebra}:
 txt <- 'arma::mat Am = Rcpp::as< arma::mat >(A);
         arma::mat Bm = Rcpp::as< arma::mat >(B);
         return Rcpp::wrap( Am * Bm );'
-mmult <- cxxfunction(signature(A="numeric", B="numeric"),
-                     body=txt, plugin="RcppArmadillo")
+mmult <- cxxfunction(signature(A="numeric",
+                               B="numeric"),
+                     body=txt,
+                     plugin="RcppArmadillo")
 A <- matrix(1:9, 3, 3)
 B <- matrix(9:1, 3, 3)
 C <- mmult(A, B)
@@ -909,7 +950,8 @@ example. This is merely for demonstration, it is also not perfectly general
 as we do not detect locations first---but it serves as an example:
 
 ```{r, eval = FALSE}
-## simple example of seeding RNG and drawing one random number
+# simple example of seeding RNG and
+# drawing one random number
 gslrng <- '
 int seed = Rcpp::as<int>(par) ;
 gsl_rng_env_setup();
@@ -921,11 +963,14 @@ return Rcpp::wrap(v);'
 
 plug <- Rcpp:::Rcpp.plugin.maker(
     include.before = "#include <gsl/gsl_rng.h>",
-    libs = paste("-L/usr/local/lib/R/site-library/Rcpp/lib -lRcpp",
-                 "-Wl,-rpath,/usr/local/lib/R/site-library/Rcpp/lib",
-                 "-L/usr/lib -lgsl -lgslcblas -lm"))
+    libs = paste(
+"-L/usr/local/lib/R/site-library/Rcpp/lib -lRcpp",
+"-Wl,-rpath,/usr/local/lib/R/site-library/Rcpp/lib",
+"-L/usr/lib -lgsl -lgslcblas -lm")
+)
 registerPlugin("gslDemo", plug )
-fun <- cxxfunction(signature(par="numeric"), gslrng, plugin="gslDemo")
+fun <- cxxfunction(signature(par="numeric"),
+                   gslrng, plugin="gslDemo")
 fun(0)
 ```
 
@@ -940,15 +985,17 @@ The same plugins can be used by Rcpp Attributes as well.
 
 The quickest way is to modify the return value from an existing plugin. Here
 we use the default one from \pkg{Rcpp} itself in order to pass the new flag
-\verb|-std=c++0x|. As it does not set the \verb|PKG_CXXFLAGS| variable, we
+`-std=c++0x`. As it does not set the `PKG_CXXFLAGS` variable, we
 simply assign this. For other plugins, one may need to append to the existing
 values instead.
 
 ```{r, eval=FALSE}
 myplugin <- getPlugin("Rcpp")
 myplugin$env$PKG_CXXFLAGS <- "-std=c++11"
-f <- cxxfunction(signature(), settings=myplugin, body='
-    std::vector<double> x = { 1.0, 2.0, 3.0 };  // fails without -std=c++0x
+f <- cxxfunction(signature(), 
+                 settings = myplugin, body = '
+    // fails without -std=c++0x
+    std::vector<double> x = { 1.0, 2.0, 3.0 }; 
     return Rcpp::wrap(x);
 ')
 f()
@@ -968,15 +1015,18 @@ character vectors, one each for row and column names, and assign this to the
 ```{r, eval = FALSE}
 src <- '
   Rcpp::NumericMatrix x(2,2);
-  x.fill(42);                           // or more interesting values
-  Rcpp::List dimnms =                   // two vec. with static names
-      Rcpp::List::create(Rcpp::CharacterVector::create("cc", "dd"),
-                         Rcpp::CharacterVector::create("ee", "ff"));
+  x.fill(42);           // or another value
+  Rcpp::List dimnms =   // list with 2 vecs
+    Rcpp::List::create( // with static names
+      Rcpp::CharacterVector::create("cc", "dd"),
+      Rcpp::CharacterVector::create("ee", "ff")
+    );
   // and assign it
   x.attr("dimnames") = dimnms;
   return(x);
 '
-fun <- cxxfunction(signature(), body=src, plugin="Rcpp")
+fun <- cxxfunction(signature(), 
+                   body=src, plugin="Rcpp")
 fun()
 ```
 
@@ -988,10 +1038,11 @@ The same logic, but used with Rcpp Attributes:
 // [[Rcpp::export]]
 Rcpp::List fun(void) {
     Rcpp::NumericMatrix x(2,2);
-    x.fill(42);                           // or more interesting values
-    Rcpp::List dimnms =                   // two vec. with static names
-        Rcpp::List::create(Rcpp::CharacterVector::create("cc", "dd"),
-                           Rcpp::CharacterVector::create("ee", "ff"));
+    x.fill(42);           // or another value
+    Rcpp::List dimnms =   // list with 2 vecs
+      Rcpp::List::create( // with static names
+        Rcpp::CharacterVector::create("cc", "dd"),
+        Rcpp::CharacterVector::create("ee", "ff"));
     // and assign it
     x.attr("dimnames") = dimnms;
     return(x);
@@ -1011,14 +1062,16 @@ BigInts <- cxxfunction(signature(),
   'std::vector<long> bigints;
    bigints.push_back(12345678901234567LL);
    bigints.push_back(12345678901234568LL);
-   Rprintf("Difference of %ld\\n", 12345678901234568LL - 12345678901234567LL);
-   return wrap(bigints);', plugin="Rcpp", includes="#include <vector>")
+   Rprintf("Difference of %ld\\n",
+       12345678901234568LL - 12345678901234567LL);
+   return wrap(bigints);',
+  plugin="Rcpp", includes="#include <vector>")
 
-retval<-BigInts()
+retval <- BigInts()
 
-# Unique 64-bit integers were cast to identical lower precision numerics
-# behind my back with no warnings or errors whatsoever.  Error.
-
+# Unique 64-bit integers were cast to identical
+# lower precision numerics behind my back with
+# no warnings or errors whatsoever.  Error.
 
 stopifnot(length(unique(retval)) == 2)
 ```
@@ -1076,7 +1129,7 @@ nest lists.
 
 ## Can I use default function parameters with \pkg{Rcpp}?
 
-Yes, you can use default parameters with \textit{some} limitations.
+Yes, you can use default parameters with _some_ limitations.
 The limitations are mainly related to string literals and empty vectors.
 This is what is currently supported:
 
@@ -1089,7 +1142,8 @@ This is what is currently supported:
 - Selected vector types can be instantiated using the empty form of the
   `::create` static member function.
     - `CharacterVector`, `IntegerVector`, and `NumericVector`
-- Matrix types instantiated using the rows, cols constructor `Rcpp::<Type>Matrix n(rows,cols)`
+- Matrix types instantiated using the rows, cols constructor
+  `Rcpp::<Type>Matrix n(rows,cols)`
     - `CharacterMatrix`, `IntegerMatrix`, and `NumericMatrix`
 
 To illustrate, please consider the following example that provides a short
@@ -1099,19 +1153,25 @@ how to:
 #include <Rcpp.h>
 
 // [[Rcpp::export]]
-void sample_defaults(NumericVector x = NumericVector::create(), // Size 0 vector
-                     bool bias = true,                          // Set to true
-                     std::string method = "rcpp rules!"){       // Default string
+void sample_defaults(
+        NumericVector x =
+        NumericVector::create(), // Size 0 vector
+        bool bias = true,        // Set to true
+        std::string method = 
+            "rcpp rules!") {     // Set string
+    
     Rcpp::Rcout << "x size: " << x.size() << ", ";
     Rcpp::Rcout << "bias value: " << bias << ", ";
-    Rcpp::Rcout << "method value: " << method << std::endl;
+    Rcpp::Rcout << "method value: " << ".";
+    
 }
 
 /*** R
-sample_defaults()                  # all defaults
-sample_defaults(1:5)               # supply x values
-sample_defaults(bias = FALSE,
-                method = "rstats") # supply bool and string
+sample_defaults()                 # all defaults
+sample_defaults(1:5)              # supply x values
+
+sample_defaults(bias = FALSE,     # supply bool
+                method = "Rlang") # and string
 */
 ```
 
@@ -1235,17 +1295,17 @@ issues come to light only when pushing the edge capabilities of \pkg{Rcpp}.
 
 ## \pkg{Rcpp} changed the (const) object I passed by value
 
-\pkg{Rcpp} objects are wrappers around the underlying \Rs objects' `SEXP`,
+\pkg{Rcpp} objects are wrappers around the underlying \proglang{R} objects' `SEXP`,
 or S-expression. The `SEXP` is a pointer variable that holds the location
-of where the \Rs object data has been stored \citep[][Section 1.1]{R:Internals}.
-That is to say, the `SEXP` does \textit{not} hold the actual data of the
-\Rs object but merely a reference to where the data resides. When creating a new
-\pkg{Rcpp} object for an \Rs object to enter \proglang{C++}, this object will
-use the same `SEXP` that powers the original \Rs object if the types match
+of where the \proglang{R} object data has been stored \citep[][Section 1.1]{R:Internals}.
+That is to say, the `SEXP` does _not_ hold the actual data of the
+\proglang{R} object but merely a reference to where the data resides. When creating a new
+\pkg{Rcpp} object for an \proglang{R} object to enter \proglang{C++}, this object will
+use the same `SEXP` that powers the original \proglang{R} object if the types match
 otherwise a new `SEXP` must be created to be type safe. In essence, the
 underlying `SEXP` objects are passed by reference without explicit copies
 being made into \proglang{C++}. We refer to this arrangement as a
-\textit{proxy model}.
+_proxy model_.
 
 As for the actual implementation, there are a few consequences of the proxy
 model. The foremost consequence within this paradigm is that pass by value is
@@ -1258,21 +1318,21 @@ void explicit_ref(NumericVector& X);
 ```
 
 In particular, when one is passing by value what occurs is the instantiation of
-the new \pkg{Rcpp} object that uses the same `SEXP` for the \Rs object.
-As a result, the \pkg{Rcpp} object is ``linked'' to the original \Rs object.
+the new \pkg{Rcpp} object that uses the same `SEXP` for the \proglang{R} object.
+As a result, the \pkg{Rcpp} object is ``linked'' to the original \proglang{R} object.
 Thus, if an operation is performed on the \pkg{Rcpp} object, such as adding 1
-to each element, the operation also updates the \Rs object causing the change to be propagated to \R's interactive environment.
+to each element, the operation also updates the \proglang{R} object causing the change to be propagated to \proglang{R}'s interactive environment.
 
 ```{Rcpp, eval = FALSE}
 #include<Rcpp.h>
 
 // [[Rcpp::export]]
-void implicit_ref(Rcpp::NumericVector X){
+void implicit_ref(Rcpp::NumericVector X) {
    X = X + 1.0;
 }
 
 // [[Rcpp::export]]
-void explicit_ref(Rcpp::NumericVector& X){
+void explicit_ref(Rcpp::NumericVector& X) {
    X = X + 1.0;
 }
 ```
@@ -1288,29 +1348,29 @@ b
 
 There are two exceptions to this rule. The first exception is that a deep copy
 of the object can be made by explicit use of `Rcpp:clone()`. In this case,
-the cloned object has no link to the original \Rs object. However, there is a
+the cloned object has no link to the original \proglang{R} object. However, there is a
 time cost associated with this procedure as new memory must be allocated and
 the previous values must be copied over.  The second exception, which was
-previously foreshadowed, is encountered when \pkg{Rcpp} and \Rs object types
-do not match. One frequent example of this case is when the \Rs object generated
+previously foreshadowed, is encountered when \pkg{Rcpp} and \proglang{R} object types
+do not match. One frequent example of this case is when the \proglang{R} object generated
 from `seq()` or `a:b` reports a class of `"integer"` while the
 \pkg{Rcpp} object is setup to receive the class of `"numeric"` as its
 object is set to `NumericVector` or `NumericMatrix`.  In such cases,
 this would lead to a new `SEXP` object being created behind the scenes
-and, thus, there would \textit{not} be a link between the \pkg{Rcpp} object
-and \Rs object. So, any changes in \proglang{C++} would not be propagated to
-\Rs unless otherwise specified.
+and, thus, there would _not_ be a link between the \pkg{Rcpp} object
+and \proglang{R} object. So, any changes in \proglang{C++} would not be propagated to
+\proglang{R} unless otherwise specified.
 
 ```{Rcpp, eval = FALSE}
 #include<Rcpp.h>
 
 // [[Rcpp::export]]
-void int_vec_type(Rcpp::IntegerVector X){
+void int_vec_type(Rcpp::IntegerVector X) {
    X = X + 1.0;
 }
 
 // [[Rcpp::export]]
-void num_vec_type(Rcpp::NumericVector X){
+void num_vec_type(Rcpp::NumericVector X) {
    X = X + 1.0;
 }
 ```
@@ -1332,16 +1392,21 @@ model paradigm works, there is a way to ``override'' the `const` designation.
 Simply put, one can create a new \pkg{Rcpp} object without the `const`
 declaration from a pre-existing one. As a result, the new \pkg{Rcpp} object
 would be allowed to be modified by the compiler and, thus, modifying the initial
-`SEXP` object. Therefore, the initially secure \Rs object would be altered.
+`SEXP` object. Therefore, the initially secure \proglang{R} object would be altered.
 To illustrate this phenomenon, consider the following scenario:
 
 ```{Rcpp, eval = FALSE}
 #include <Rcpp.h>
 
 // [[Rcpp::export]]
-Rcpp::NumericVector const_override_ex(const Rcpp::NumericVector& X) {
-  Rcpp::NumericVector Y(X); // Create object from SEXP
+Rcpp::NumericVector const_override_ex(
+        const Rcpp::NumericVector& X) {
+    
+  Rcpp::NumericVector Y(X); // Create object
+                            // from SEXP
+                            
   Y = Y * 2;                // Modify new object
+  
   return X;                 // Return old object
 }
 ```
@@ -1370,20 +1435,25 @@ the aforementioned approach is emphasized:
 #include<Rcpp.h>
 
 // [[Rcpp::export]]
-std::string explicit_string_conv(Rcpp::CharacterVector X) {
+std::string explicit_string_conv(
+        Rcpp::CharacterVector X) {
+    
     std::string s;  // define storage
     s = X[0];       // assign from CharacterVector
+    
     return s;
 }
 ```
 
 If one were to use a direct allocation and assignment strategy,
 e.g. `std::string s = X[0]`, this would result in the compiler triggering
-a conversion error on \textit{some} platforms. The error would be similar to:
+a conversion error on _some_ platforms. The error would be similar to:
 
 ```{bash, eval = FALSE}
-error: no viable conversion from 'Proxy' (aka 'string_proxy<16>')
-to 'std::string' (aka 'basic_string<char, char_traits<char>, allocator<char> >')
+error: no viable conversion from 'Proxy' 
+(aka 'string_proxy<16>') to 'std::string' 
+(aka 'basic_string<char, char_traits<char>,
+allocator<char> >')
 ```
 
 The second way to help the compiler is to use an explicit \pkg{Rcpp} type conversion
@@ -1414,9 +1484,15 @@ via `operator=`, then the resulting `Vector` would have a length of
 // [[Rcpp::export]]
 void vec_scalar_assign(int n, double fill_val) {
   Rcpp::NumericVector X(n);
-  Rcpp::Rcout << "Value of Vector on Creation: " << std::endl << X << std::endl;
+  Rcpp::Rcout << "Value of Vector " << 
+      "on Creation: " << 
+      std::endl << X << std::endl;
+  
   X = fill_val;
-  Rcpp::Rcout << "Value of Vector after Assignment: " << std::endl << X << std::endl;
+  
+  Rcpp::Rcout << "Value of Vector " <<
+      "after Assignment: " << 
+      std::endl << X << std::endl;
 }
 ```
 
@@ -1437,9 +1513,15 @@ assigned. For an example of this behavior, consider the following code:
 // [[Rcpp::export]]
 void mat_scalar_assign(int n, double fill_val) {
   Rcpp::NumericMatrix X(n, n);
-  Rcpp::Rcout << "Value of Matrix on Creation: " << std::endl << X << std::endl;
+  Rcpp::Rcout << "Value of Matrix " <<
+      "on Creation: " <<
+      std::endl << X << std::endl;
+  
   X = fill_val;
-  Rcpp::Rcout << "Value of Matrix after Assignment: " << std::endl << X << std::endl;
+  
+  Rcpp::Rcout << "Value of Matrix " <<
+      "after Assignment: " <<
+      std::endl << X << std::endl;
 }
 ```
 
@@ -1449,8 +1531,8 @@ mat_scalar_assign(2L, 3.0)
 
 ## Long Vector support on Windows
 
-Prior to \R 's 3.0.0, the largest vector one could obtain was at most $2^{31} - 1$
-elements. With the release of \R 's 3.0.0, long vector support was added to
+Prior to \proglang{R}'s 3.0.0, the largest vector one could obtain was at most $2^{31} - 1$
+elements. With the release of \proglang{R}'s 3.0.0, long vector support was added to
 allow for largest vector possible to increase up to $2^{52}$ elements on x64 bit
 operating systems (c.f. [Long Vectors help entry](https://stat.ethz.ch/R-manual/R-devel/library/base/html/LongVectors.html)).
 Once this was established, support for long vectors within the \pkg{Rcpp} paradigm
@@ -1491,14 +1573,14 @@ test_long_vector_support()
 ```
 
 The remaining two options are for users who have opted to embed \pkg{Rcpp} code
-within an \Rs package. In particular, the second option requires adding
+within an \proglang{R} package. In particular, the second option requires adding
 `CXX_STD = CXX11` to a `Makevars` file found in the `/src`
 directory. Finally, the third option is to add `SystemRequirements:C++11`
 in the package's `DESCRIPTION` file.
 
-Please note that the support for \proglang{C++11} prior to \Rs v3.3.0 on Windows
+Please note that the support for \proglang{C++11} prior to \proglang{R} v3.3.0 on Windows
 is limited. Therefore, plan accordingly if the goal is to support older
-versions of \R.
+versions of \proglang{R}.
 
 ## Sorting with STL on a `CharacterVector` produces problematic results
 
@@ -1507,12 +1589,12 @@ adequately for the majority of \pkg{Rcpp} data types. The notable exception
 that makes what would otherwise be a universal quantifier into an existential
 quantifier is the `CharacterVector` data type. Chiefly, the issue with
 sorting strings is related to how the `CharacterVector` relies upon the
-use of `Rcpp::internal::string_proxy`. In particular,
-`Rcpp::internal::string_proxy` is \textit{not} MoveAssignable since the
-left hand side of `operator=(const string_proxy \&rhs)` is \textit{not}
-viewed as equivalent to the right hand side before the operation
-\citep[][p. 466, Table 22]{Cpp11}. This further complicates matters when
-using `CharacterVector` with `std::swap`, `std::move`,
+use of `Rcpp::internal::string_proxy`. 
+In particular, `Rcpp::internal::string_proxy` is _not_ MoveAssignable since the
+left hand side of `operator=(const string_proxy \&rhs)` is _not_
+viewed as equivalent to the right hand side before the
+operation \citep[][p. 466, Table 22]{Cpp11}. This further complicates matters
+when using `CharacterVector` with `std::swap`, `std::move`,
 `std::copy` and their variants.
 
 To avoid unwarranted pain with sorting, the preferred approach is to use the
@@ -1526,16 +1608,22 @@ approach alongside the problematic STL approach:
 #include <Rcpp.h>
 
 // [[Rcpp::export]]
-Rcpp::CharacterVector preferred_sort(Rcpp::CharacterVector x) {
+Rcpp::CharacterVector preferred_sort(
+        Rcpp::CharacterVector x) {
+    
   Rcpp::CharacterVector y = Rcpp::clone(x);
   y.sort();
+  
   return y;
 }
 
 // [[Rcpp::export]]
-Rcpp::CharacterVector stl_sort(Rcpp::CharacterVector x) {
+Rcpp::CharacterVector stl_sort(
+        Rcpp::CharacterVector x) {
+    
   Rcpp::CharacterVector y = Rcpp::clone(x);
   std::sort(y.begin(), y.end());
+  
   return y;
 }
 ```
@@ -1556,11 +1644,11 @@ as a majority of code is compiled against `libstdc++` as it more complete.
 
 ## Lexicographic order of string sorting differs due to capitalization
 
-Comparing strings within \Rs hinges on the ability to process the locale or
-native-language environment of the string. In \R, there is a function called
+Comparing strings within \proglang{R} hinges on the ability to process the locale or
+native-language environment of the string. In \proglang{R}, there is a function called
 `Scollate` that performs the comparison on locale. Unfortunately, this
 function has not been made publicly available and, thus, \pkg{Rcpp} does
-\textit{not} have access to it within its implementation of `StrCmp`.
+_not_ have access to it within its implementation of `StrCmp`.
 As a result, strings that are sorted under the `.sort()` member function
 are ordered improperly. Specifically, if capitalization is present, then
 capitalized words are sorted together followed by the sorting of lowercase
@@ -1571,7 +1659,8 @@ illustrated by the following code example:
 #include <Rcpp.h>
 
 // [[Rcpp::export]]
-Rcpp::CharacterVector rcpp_sort(Rcpp::CharacterVector X) {
+Rcpp::CharacterVector rcpp_sort(
+        Rcpp::CharacterVector X) {
   X.sort();
   return X;
 }
