@@ -1,13 +1,12 @@
 ---
-title: |
-       | \pkg{Rcpp} Quick Reference Guide
+title: \pkg{Rcpp} Quick Reference Guide
 
 # Use letters for affiliations
 author:
   - name: Dirk Eddelbuettel
     affiliation: a
-  - name: Romain Francois
-    affiliation: a
+  - name: Romain François
+    affiliation: b
 
 address:
   - code: a
@@ -16,7 +15,7 @@ address:
     address: \url{https://romain.rbind.io/}
 
 # For footer text
-lead_author_surname: Eddelbuettel and Francois
+lead_author_surname: Eddelbuettel and François
 
 # Place DOI URL or CRAN Package URL here
 doi: "https://cran.r-project.org/package=Rcpp"
@@ -57,7 +56,7 @@ bibliography: Rcpp
 # Customize footer, eg by referencing the vignette
 footer_contents: "Rcpp Vignette"
 
-# Our style
+# Produce a pinp document
 output: pinp::pinp
 
 header-includes:
@@ -74,23 +73,26 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-\paragraph{Important Notes} 
+# Important Notes
 
-```{Rcpp, eval = FALSE}
-// If you experience compiler errors, please check that you have an appropriate version of g++. See `Rcpp-FAQ' for more information.
+```cpp
+// If you experience compiler errors, please check
+// that you have an appropriate version of g++.
+// See `Rcpp-FAQ' for more information.
 
 // Many of the examples here imply the following:
 #include <Rcpp.h>
 using namespace Rcpp;
 // The cppFunction will automatically add this.
 
-// Or, prefix Rcpp objects with the Rcpp namespace e.g.:
+// Or, prefix Rcpp objects with the Rcpp namespace
+// as e.g. in:
 Rcpp::NumericVector xx(10);
 ```
 
-\paragraph{Create simple vectors}
+# Create simple vectors
 
-```{Rcpp, eval = FALSE}
+```cpp
 SEXP x; std::vector<double> y(10);
 
 // from SEXP
@@ -102,19 +104,20 @@ NumericVector xx(10);
 NumericVector xx(10, 2.0);
 
 // range constructor
-NumericVector xx( y.begin(), y.end() );
+NumericVector xx(y.begin(), y.end());
 
 // using create
-NumericVector xx = NumericVector::create(
-    1.0, 2.0, 3.0, 4.0 );
-NumericVector yy = NumericVector::create(
-    Named["foo"] = 1.0,
-        _["bar"] = 2.0 );  // _ short for Named
+NumericVector xx =
+    NumericVector::create(1.0, 2.0, 3.0, 4.0);
+NumericVector yy =
+    NumericVector::create(Named["foo"] = 1.0,
+                         _["bar"]      = 2.0);
+                         // _ short for Named
 ```
 
-\paragraph{Extract and set single elements}
+# Extract and set single elements
 
-```{Rcpp, eval = FALSE}
+```cpp
 // extract single values
 double x0 = xx[0];
 double x1 = xx(1);
@@ -132,9 +135,9 @@ yy["foo"] = 3.0;
 yy["foobar"] = 10.0;
 ```
 
-\paragraph{Using matrices}
+# Using matrices
 
-```{Rcpp, eval = FALSE}
+```cpp
 // Initializing from SEXP,
 // dimensions handled automatically
 SEXP x;
@@ -162,11 +165,11 @@ zzcol = zzcol * 2;
 
 // Copy the second column into new object
 NumericVector zz1 = xx( _, 1);
-// Copy the submatrix (top left 3x3) into new object
+// Copy submatrix (top left 3x3) into new object
 NumericMatrix zz2 = xx( Range(0,2), Range(0,2));
 ```
 
-\paragraph{Inline C++ Compile in R}
+# Inline C++ Compile in R
 
 ```{r, eval = FALSE}
 ## Note - this is R code. 
@@ -185,84 +188,122 @@ exfun(1:5, 3)
 evalCpp("std::numeric_limits<double>::max()")
 ```
 
-\paragraph{Interface with R}
+# Interface with R
 
-```{Rcpp, eval = FALSE}
-## In R, create a package shell. For details, see the "Writing R Extensions" manual.
+## First step in R
+
+```{r, eval = FALSE}
+# In R, create a package shell. For details,
+# see the "Writing R Extensions" manual and
+# the "Rcpp-package" vignette.
 
 Rcpp.package.skeleton("myPackage")
 
-## Add R code to pkg R/ directory. Call C++ function. Do type-checking in R.
+# Add R code to pkg R/ directory. Call C++
+# function. Do type-checking in R.
 
-myfunR = function(Rx, Ry) {
+myfunR <- function(Rx, Ry) {
     ret = .Call("myCfun", Rx, Ry,
-            package="myPackage")
+                package="myPackage")
     return(ret)
 }
+```
 
+## Additional C++
+
+```cpp
 // Add C++ code to pkg src/ directory.
 using namespace Rcpp;
 // Define function as extern with RcppExport
 RcppExport SEXP myCfun( SEXP x, SEXP y) {
-    // If R/C++ types match, use pointer to x.  Pointer is faster, but changes to xx propagate to R ( xx -> x == Rx).
+    // If R/C++ types match, use pointer to x.
+    // Pointer is faster, but changes to xx
+    // propagate to R ( xx -> x == Rx).
     NumericVector xx(x);
-    // clone is slower and uses extra memory. Safe, R-like.
+    
+    // clone is slower and uses extra memory.
+    // Safe. No side effects.
     NumericVector yy(clone(y));
+    
     xx[0] = yy[0] = -1.5;
     int zz = xx[0];
+
     // use wrap() to return non-SEXP objects, e.g:
     // return(wrap(zz));
     // Build and return a list
-    List ret; ret["x"] = xx; ret["y"] = yy;
+    List ret;
+    ret["x"] = xx;
+    ret["y"] = yy;
     return(ret);
 }
-
-## From shell, above package directory
-R CMD check myPackage  ## Optional
-R CMD INSTALL myPackage
-
-## In R:
-require(myPackage)
-aa = 1.5; bb = 1.5; cc =  myfunR(aa, bb)
-aa == bb ## FALSE, C++ modifies aa
-aa = 1:2; bb = 1:2; cc =  myfunR(aa, bb)
-identical(aa, bb)
-## TRUE, R/C++ types don't match
 ```
 
-\paragraph{STL interface}
+## On the command-line
 
-```{Rcpp, eval = FALSE}
+```sh
+# From shell, above package directory
+R CMD build myPackage
+R CMD check myPackage_1.0.tar.gz  ## Optional
+R CMD INSTALL myPackage_1.0.tar.gz
+```
+
+## Back in R
+
+```{r, eval=FALSE}
+require(myPackage)
+
+aa <- 1.5
+bb <- 1.5
+cc <- myfunR(aa, bb)
+aa == bb
+# FALSE, C++ modifies aa
+
+aa <- 1:2
+bb <- 1:2
+cc <-  myfunR(aa, bb)
+identical(aa, bb)
+# TRUE, R/C++ types don't match
+# so a copy was made
+```
+
+# STL interface
+
+```cpp
 // sum a vector from beginning to end
 double s = std::accumulate(x.begin(),
-   x.end(), 0.0);
+                           x.end(), 0.0);
 // prod of elements from beginning to end
 int p = std::accumulate(vec.begin(),
-    vec.end(), 1, std::multiplies<int>());
+                        vec.end(), 1,
+                        std::multiplies<int>());
 // inner_product to compute sum of squares
 double s2 = std::inner_product(res.begin(),
-    res.end(), res.begin(), 0.0);
+                               res.end(),
+                               res.begin(), 0.0);
 ```
 
-\paragraph{Rcpp Attributes}
+# Rcpp Attributes
 
-```{Rcpp, eval = FALSE}
+## In C++
+
+```cpp
 // Add code below into C++ file Rcpp_example.cpp
 
 #include <Rcpp.h>
 using namespace Rcpp;
 
-// Place the export tag right above function declaration.
+// Place the 'Rcpp::export' tag
+// right above function declaration.
 
 // [[Rcpp::export]]
 double muRcpp(NumericVector x){
     int n = x.size(); // Size of vector
-    double sum = 0;   // Sum value         
+    double sum = 0;   // Sum value  
     
     // For loop, note cpp index shift to 0
     for(int i = 0; i < n; i++){ 
         // Shorthand for sum = sum + x[i]
-        sum += x[i];            
+        sum += x[i];     
     }
     
     return sum/n;  // Obtain and return the Mean
@@ -275,7 +316,7 @@ double muRcpp(NumericVector x);
 // [[Rcpp::export]]
 double varRcpp(NumericVector x, bool bias = true){
     // Calculate the mean using C++ function
-    double mean = muRcpp(x);  
+    double mean = muRcpp(x);
     double sum = 0;
     int n = x.size();
     
@@ -285,18 +326,20 @@ double varRcpp(NumericVector x, bool bias = true){
     
     return sum/(n-bias); // Return variance 
 }
-
-## In R:
-require(Rcpp)
-sourceCpp("path/to/file/Rcpp_example.cpp")
-x = 1:5;
-all.equal(muRcpp(x), mean(x)); all.equal(var(x),varRcpp(x))
-## TRUE
 ```
 
-\paragraph{Rcpp Extensions}
+## In R:
 
-```{Rcpp, eval = FALSE}
+```{r, eval=FALSE}
+Rcpp::sourceCpp("path/to/file/Rcpp_example.cpp")
+x <- 1:5
+all.equal(muRcpp(x), mean(x))
+all.equal(var(x),varRcpp(x))
+```
+
+# Rcpp Extensions
+
+```cpp
 // Enable C++11
 // [[Rcpp::plugins(cpp11)]]
 
@@ -309,13 +352,13 @@ all.equal(muRcpp(x), mean(x)); all.equal(var(x),varRcpp(x))
 // [[Rcpp::depends(RcppArmadillo)]]
 ```
 
-\paragraph{Rcpp sugar}
+# Rcpp sugar
 
-```{Rcpp, eval = FALSE}
-NumericVector x = NumericVector::create(
-  -2.0, -1.0, 0.0, 1.0, 2.0 );
-IntegerVector y = IntegerVector::create(
-  -2, -1, 0, 1, 2 );
+```cpp
+NumericVector x =
+    NumericVector::create(-2.0,-1.0,0.0,1.0,2.0);
+IntegerVector y =
+    IntegerVector::create(-2, -1, 0, 1, 2);
 
 NumericVector xx = abs( x );
 IntegerVector yy = abs( y );
@@ -344,13 +387,20 @@ NumericVector xx = rep_each( x, 3 );
 IntegerVector yy = rev( y );
 ```
 
-\paragraph{Random functions}
+# Random Number Generation functions}
 
-```{Rcpp, eval = FALSE}
+```cpp
 // Set seed
 RNGScope scope;
 
-// For details see Section 6.7.1--Distribution functions of the `Writing R Extensions' manual. In some cases (e.g. rnorm), distribution-specific arguments can be omitted; when in doubt, specify all dist-specific arguments. The use of doubles rather than integers for dist-specific arguments is recommended. Unless explicitly specified, log=FALSE.
+// For details see Section 6.7.1--Distribution
+// functions of the `Writing R Extensions' manual.
+// In some cases (e.g. rnorm), dist-specific
+// arguments can be omitted; when in doubt, 
+// specify all dist-specific arguments. The use 
+// of doublesrather than integers for dist-
+// specific arguments is recommended. Unless
+// explicitly specified, log=FALSE.
 
 // Equivalent to R calls
 NumericVector xx = runif(20);
@@ -379,11 +429,10 @@ NumericVector yy = dnorm(quants, 0.0, 2.0, true) ;
 double zz = Rf_rnorm(0, 2);
 ```
 
-\newpage
 
-\paragraph{Environment}
+# Environment
 
-```{Rcpp, eval = FALSE}
+```cpp
 // Obtain an R environment
 Environment stats("package:stats");
 Environment env( 2 ); // by position
@@ -395,8 +444,7 @@ Environment::base_namespace();
 Environment::global_env();
 Environment::empty_env();
 
-// Extract function from specific
-// environment
+// Extract function from specific environment
 Function rnorm = stats["rnorm"];
 
 // Assign into the environment
@@ -423,59 +471,61 @@ Environment e = stats.parent();
 Environment e = glob.new_child();
 ```
 
-\paragraph{Calling Functions in R}
+# Calling Functions in R
 
-```{Rcpp, eval = FALSE}
+```cpp
 // Do NOT expect to have a performance gain
 // when calling R functions from R! 
 
-// Retrieve functions from default loaded environment
+// Retrieve functions from default loaded env.
 Function rnorm("rnorm");
 rnorm(100, _["mean"] = 10.2, _["sd"] = 3.2 );
 
 // Passing in an R function and obtaining results
-// Make sure the function conforms with return type!
+// Make sure function conforms with return type!
 NumericVector callFunction(NumericVector x, 
                            Function f) {
     NumericVector res = f(x);
     return res;
 }
 
-/***R
-## The following is R code.
+/*** R
+# The following is R code executed
+# by sourceCpp() as a convenience.
 x = 1:5
 callFunction(x, sum)
 */
 ```
 
-\newpage
+# Modules
 
-\paragraph{Modules}
+```cpp
+// Warning -- Module-based objects do not persist
+// across quit(save="yes")/reload cycles.  To be
+// safe, save results to R objects and remove
+// module objects before exiting R.
 
-```{Rcpp, eval = FALSE}
-// Warning -- At present, module-based objects do not persist across quit(save="yes")/reload cycles.  To be safe, save results to R objects and remove module objects before exiting R.
-
-// To create a module-containing package from R, use:
-Rcpp.package.skeleton("mypackage",module=TRUE)
-// You will need to edit the RcppModules: line of the DESCRIPTION file to match your module name (in this example, from yada to mod_bar).
+// To create a module-containing package from R:
+// Rcpp.package.skeleton("mypackage", module=TRUE)
 
 class Bar {
   public:
-    Bar(double x_) :
-      x(x_), nread(0), nwrite(0) {}
+    Bar(double x_) : x(x_), nread(0), nwrite(0) {}
 
     double get_x( ) {
-      nread++;    return x;
+      nread++;
+      return x;
     }
 
     void set_x( double x_) {
-      nwrite++;   x = x_;
+      nwrite++;
+      x = x_;
     }
 
     IntegerVector stats() const {
-      return IntegerVector::create(
-        _["read"] = nread,
-        _["write"] = nwrite);
+      return
+      IntegerVector::create(_["read"] = nread,
+                            _["write"] = nwrite);
     }
   private:
     double x; int nread, nwrite;
@@ -490,10 +540,12 @@ RCPP_MODULE(mod_bar) {
     "Docstring for stats")
 ;}
 
-/***R
+/*** R
 ## The following is R code.
-require(mypackage); show(Bar)
-b <- new(Bar, 10);  b$x <- 10
+require(mypackage) s
+how(Bar)
+b <- new(Bar, 10)
+b$x <- 10
 b_persist <- list(stats=b$stats(), x=b$x)
 rm(b)
 */
