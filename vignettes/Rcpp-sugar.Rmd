@@ -139,7 +139,9 @@ high-level \proglang{R} syntax in \proglang{C++}. Hence, with \sugar, the
 RcppExport SEXP foo( SEXP xs, SEXP ys) {
     Rcpp::NumericVector x(xs);
     Rcpp::NumericVector y(ys);
-    return Rcpp::wrap(ifelse(x < y, x * x, -(y * y)));
+    return Rcpp::wrap(
+        ifelse(x < y, x * x, -(y * y))
+    );
 }
 ```
 
@@ -310,7 +312,8 @@ length. Each element of the result expression evaluates to `TRUE` if
 the corresponding input is a missing value, or `FALSE` otherwise.
 
 ```{Rcpp, eval = FALSE}
-IntegerVector x = IntegerVector::create(0, 1, NA_INTEGER, 3);
+IntegerVector x = 
+    IntegerVector::create(0, 1, NA_INTEGER, 3);
 
 is_na(x)
 all(is_na( x ))
@@ -323,10 +326,11 @@ Given a sugar expression of any type, `seq_along` creates an
 integer sugar expression whose values go from 1 to the size of the input.
 
 ```{Rcpp, eval = FALSE}
-IntegerVector x = IntegerVector::create( 0, 1, NA_INTEGER, 3 );
+IntegerVector x = 
+    IntegerVector::create( 0, 1, NA_INTEGER, 3 );
 
 IntegerVector y = seq_along(x);
-IntegerVector z = seq_along(x * x * x * x * x * x * x);
+IntegerVector z = seq_along(x * x * x * x * x * x);
 ```
 
 This is the most lazy function, as it only needs to call the `size`
@@ -464,7 +468,7 @@ abs(x)
 exp(x)
 floor(x)
 ceil(x)
-pow(x, z)     # x to the power of z
+pow(x, z)     // x to the power of z
 ```
 
 % log() and log10() maybe?  Or ln() ?
@@ -480,10 +484,10 @@ denote size. Consequently, these calls works in \proglang{C++} just as they
 would in \proglang{R}:
 
 ```{Rcpp, eval = FALSE}
-x1 = dnorm(y1, 0, 1);  // density of y1 at m=0, sd=1
-x2 = qnorm(y2, 0, 1);  // quantiles of y2
-x3 = pnorm(y3, 0, 1);  // distribution function of y3
-x4 = rnorm(n, 0, 1);   // 'n' RNG draws of N(0, 1)
+x1 = dnorm(y1, 0, 1); // density of y1 at m=0, sd=1
+x2 = qnorm(y2, 0, 1); // quantiles of y2
+x3 = pnorm(y3, 0, 1); // distribution of y3
+x4 = rnorm(n, 0, 1);  // 'n' RNG draws of N(0, 1)
 ```
 
 Similar d/q/p/r functions are provided for the most common distributions:
@@ -568,25 +572,42 @@ is given here:
 template <int RTYPE, bool na, typename VECTOR>
 class VectorBase {
 public:
-    struct r_type : traits::integral_constant<int,RTYPE>{};
-    struct can_have_na : traits::integral_constant<bool,na>{};
-    typedef typename traits::storage_type<RTYPE>::type stored_type;
+    struct r_type : 
+        traits::integral_constant<int,RTYPE>{};
+    struct can_have_na :
+        traits::integral_constant<bool,na>{};
+    
+    typedef typename 
+        traits::storage_type<RTYPE>::type 
+        stored_type;
 
     VECTOR& get_ref(){
         return static_cast<VECTOR&>(*this);
     }
 
-    inline stored_type operator[]( int i) const {
-        return static_cast<const VECTOR*>(this)->operator[](i);
+    inline stored_type operator[](int i) const {
+        return 
+          static_cast<const VECTOR*>(
+                  this
+          )->operator[](i);
     }
 
-    inline int size() const { return static_cast<const VECTOR*>(this)->size(); }
+    inline int size() const { 
+        return 
+          static_cast<const VECTOR*>(
+                  this
+          )->size(); 
+    }
 
     /* definition ommited here */
     class iterator;
 
-    inline iterator begin() const { return iterator(*this, 0); }
-    inline iterator end() const { return iterator(*this, size()); }
+    inline iterator begin() const { 
+        return iterator(*this, 0); 
+    }
+    inline iterator end() const { 
+        return iterator(*this, size());
+    }
 }
 ```
 
@@ -617,29 +638,44 @@ As an example, the current implementation of `sapply`, supported by
 the template class `Rcpp::sugar::Sapply` is given below:
 
 ```{Rcpp, eval = FALSE}
-template <int RTYPE, bool NA, typename T, typename Function>
+template <int RTYPE, bool NA,
+          typename T, typename Function>
 class Sapply : public VectorBase<
     Rcpp::traits::r_sexptype_traits<
-        typename ::Rcpp::traits::result_of<Function>::type
-    >::rtype ,
-    true ,
-    Sapply<RTYPE,NA,T,Function>
+        typename 
+        ::Rcpp::traits::result_of<Function>::type
+    >::rtype,
+    true,
+    Sapply<RTYPE, NA, T, Function>
 > {
 public:
-    typedef typename ::Rcpp::traits::result_of<Function>::type;
+    typedef typename 
+      ::Rcpp::traits::result_of<Function>::type;
+    
     const static int RESULT_R_TYPE =
-        Rcpp::traits::r_sexptype_traits<result_type>::rtype;
+      Rcpp::traits::r_sexptype_traits<
+          result_type>::rtype;
+    
     typedef Rcpp::VectorBase<RTYPE,NA,T> VEC;
-    typedef typename Rcpp::traits::r_vector_element_converter<RESULT_R_TYPE>::type
+    
+    typedef typename 
+        Rcpp::traits::r_vector_element_converter<
+        RESULT_R_TYPE>::type
         converter_type;
-    typedef typename Rcpp::traits::storage_type<RESULT_R_TYPE>::type STORAGE;
+    
+    typedef typename Rcpp::traits::storage_type<
+        RESULT_R_TYPE>::type STORAGE;
 
-    Sapply(const VEC& vec_, Function fun_) : vec(vec_), fun(fun_){}
+    Sapply(const VEC& vec_, Function fun_) :
+        vec(vec_), fun(fun_){}
 
     inline STORAGE operator[]( int i ) const {
         return converter_type::get(fun(vec[i]));
     }
-    inline int size() const { return vec.size(); }
+    
+    inline int size() const { 
+        return vec.size(); 
+    }
 
 private:
     const VEC& vec;
@@ -648,22 +684,24 @@ private:
 
 // sugar
 
-template <int RTYPE, bool _NA_, typename T, typename Function >
-inline sugar::Sapply<RTYPE,_NA_,T,Function>
-sapply( const Rcpp::VectorBase<RTYPE,_NA_,T>& t, Function fun ){
-    return sugar::Sapply<RTYPE,_NA_,T,Function>( t, fun );
+template <int RTYPE, bool _NA_, 
+          typename T, typename Function >
+inline sugar::Sapply<RTYPE, _NA_, T, Function>
+sapply(const Rcpp::VectorBase<RTYPE,_NA_,T>& t,
+        Function fun) {
+    
+    return 
+      sugar::Sapply<RTYPE,_NA_,T,Function>(t, fun);
 }
 ```
 
 ### The sapply function
 
 `sapply` is a template function that takes two arguments.
-\begin{itemize}
-\item The first argument
-is a sugar expression, which we recognize because of the relationship with
-the `VectorBase` class template.
-\item The second argument is the function to apply.
-\end{itemize}
+
+- The first argument is a sugar expression, which we recognize because of 
+  the relationship with the `VectorBase` class template.
+- The second argument is the function to apply.
 
 The `sapply` function itself does not do anything, it is just used
 to trigger compiler detection of the template parameters that will be used
@@ -676,7 +714,9 @@ template class queries the template argument via the `Rcpp::traits::result_of`
 template.
 
 ```{Rcpp, eval = FALSE}
-typedef typename ::Rcpp::traits::result_of<Function>::type result_type;
+typedef typename 
+    ::Rcpp::traits::result_of<Function>::type 
+    result_type;
 ```
 
 The `result_of` type trait is implemented as such:
@@ -687,8 +727,9 @@ struct result_of{
     typedef typename T::result_type type;
 };
 
-template <typename RESULT_TYPE, typename INPUT_TYPE>
-struct result_of< RESULT_TYPE (*)(INPUT_TYPE) >{
+template <typename RESULT_TYPE, 
+          typename INPUT_TYPE>
+struct result_of<RESULT_TYPE (*)(INPUT_TYPE)> {
     typedef RESULT_TYPE type;
 };
 ```
@@ -706,7 +747,8 @@ trait is used to identify the expression type.
 
 ```{Rcpp, eval = FALSE}
 const static int RESULT_R_TYPE =
-    Rcpp::traits::r_sexptype_traits<result_type>::rtype;
+    Rcpp::traits::r_sexptype_traits<
+        result_type>::rtype;
 ```
 
 ### Converter
@@ -716,9 +758,10 @@ object of the function's result type to the actual storage type suitable
 for the sugar expression.
 
 ```{Rcpp, eval = FALSE}
-typedef typename Rcpp::traits::r_vector_element_converter<RESULT_R_TYPE>::type
+typedef typename
+    Rcpp::traits::r_vector_element_converter<
+        RESULT_R_TYPE>::type
     converter_type;
-
 ```
 
 ### Storage type
@@ -728,7 +771,9 @@ associated with a sugar expression type. For example, the storage type
 of a `REALSXP` expression is `double`.
 
 ```{Rcpp, eval = FALSE}
-typedef typename Rcpp::traits::storage_type<RESULT_R_TYPE>::type STORAGE;
+typedef typename
+    Rcpp::traits::storage_type<RESULT_R_TYPE>::type 
+    STORAGE;
 ```
 
 ### Input expression base type
@@ -737,7 +782,7 @@ The input expression --- the expression over which `sapply` runs --- is
 also typedef'ed for convenience:
 
 ```{Rcpp, eval = FALSE}
-typedef Rcpp::VectorBase<RTYPE,NA,T> VEC;
+typedef Rcpp::VectorBase<RTYPE, NA, T> VEC;
 ```
 
 ### Output expression base type
@@ -746,12 +791,14 @@ In order to be part of the \sugar system, the type generated by the
 `Sapply` class template must inherit from `VectorBase`.
 
 ```{Rcpp, eval = FALSE}
-template <int RTYPE, bool NA, typename T, typename Function>
+template <int RTYPE, bool NA,
+          typename T, typename Function>
 class Sapply : public VectorBase<
     Rcpp::traits::r_sexptype_traits<
-        typename ::Rcpp::traits::result_of<Function>::type
-    >::rtype ,
-    true ,
+        typename 
+        ::Rcpp::traits::result_of<Function>::type
+    >::rtype,
+    true,
     Sapply<RTYPE,NA,T,Function>
 >
 ```
@@ -767,7 +814,8 @@ simply consists of holding the reference to the input expression and the
 function.
 
 ```{Rcpp, eval = FALSE}
-Sapply(const VEC& vec_, Function fun_) : vec(vec_), fun(fun_){}
+Sapply(const VEC& vec_, Function fun_): 
+    vec(vec_), fun(fun_){}
 
 private:
     const VEC& vec;
@@ -786,7 +834,9 @@ and the converter. Both these methods are inline to maximize performance:
 inline STORAGE operator[](int i) const {
 	return converter_type::get(fun(vec[i]));
 }
-inline int size() const { return vec.size(); }
+inline int size() const { 
+    return vec.size(); 
+}
 ```
 
 # Summary
