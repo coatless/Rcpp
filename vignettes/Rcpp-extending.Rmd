@@ -1,13 +1,12 @@
 ---
-title: |
-       | \pkg{Rcpp} Extending
+title: \pkg{Rcpp} Extending
 
 # Use letters for affiliations
 author:
   - name: Dirk Eddelbuettel
     affiliation: a
-  - name: Romain Francois
-    affiliation: a
+  - name: Romain François
+    affiliation: b
 
 address:
   - code: a
@@ -16,7 +15,7 @@ address:
     address: \url{https://romain.rbind.io/}
     
 # For footer text
-lead_author_surname: Eddelbuettel and Francois
+lead_author_surname: Eddelbuettel and François
 
 # Place DOI URL or CRAN Package URL here
 doi: "https://cran.r-project.org/package=Rcpp"
@@ -54,7 +53,7 @@ fontsize: 9pt
 #one_sided: true
 
 # Optional: Bibliography 
-bibliography: '`r Rcpp:::bib()`'
+bibliography: Rcpp
 
 # Optional: Enable a 'Draft' watermark on the document
 #watermark: false
@@ -62,15 +61,12 @@ bibliography: '`r Rcpp:::bib()`'
 # Customize footer, eg by referencing the vignette
 footer_contents: "Rcpp Vignette"
 
-# Our style
-output: 
-  pinp::pinp:
-    keep_tex: true
+# Produce a pinp document
+output: pinp::pinp
 
 header-includes:
   \newcommand{\proglang}[1]{\textsf{#1}}
   \newcommand{\pkg}[1]{\textbf{#1}}
-
 
 vignette: >
   %\VignetteIndexEntry{Rcpp-extending}
@@ -91,10 +87,10 @@ versa.  The corresponding function declarations are as follows:
 
 ```{Rcpp, eval = FALSE}
 // conversion from R to C++
-template <typename T> T as( SEXP x) ;
+template <typename T> T as(SEXP x);
 
 // conversion from C++ to R
-template <typename T> SEXP wrap(const T& object) ;
+template <typename T> SEXP wrap(const T& object);
 ```
 
 These converters are often used implicitly, as in the following code chunk:
@@ -106,23 +102,24 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List fx(List input) { // we get a list from R
 // pull std::vector<double> from R list
-// this is achieved through an implicit call to Rcpp::as
-std::vector<double> x = input["x"] ;
+// this is achieved through an implicit
+// call to Rcpp::as
+std::vector<double> x = input["x"];
 
-// return an R list
-// this is achieved through implicit call to Rcpp::wrap
-return List::create(
-    _["front"] = x.front(),
-    _["back"]  = x.back()
-    );
+// return an R list; this is achieved
+// through an implicit call to Rcpp::wrap
+return List::create(_["front"] = x.front(),
+                    _["back"]  = x.back());
 }
 ```
+
+Example:
 
 ```{r}
 ## Run sourceCpp compilation to include file
 # Rcpp::sourceCpp(file= "code.cpp")
 input <- list( x = seq(1, 10, by = 0.5) )
-fx( input )
+fx(input)
 ```
 
 The \pkg{Rcpp} converter function `Rcpp::as` and `Rcpp::wrap` have been
@@ -148,11 +145,11 @@ file `Rcpp.h` is included.
 #include <RcppCommon.h>
 
 class Foo {
-    public:
-        Foo() ;
+public:
+    Foo();
 
-        // this operator enables implicit Rcpp::wrap
-        operator SEXP() ;
+    // this operator enables implicit Rcpp::wrap
+    operator SEXP();
 }
 
 #include <Rcpp.h>
@@ -179,11 +176,12 @@ includes of `RcppCommon.h` and `Rcpp.h`.
 
 // declaring the specialization
 namespace Rcpp {
-    template <> SEXP wrap( const Bar& ) ;
+    template <> SEXP wrap(const Bar&);
 }
 
 // this must appear after the specialization,
-// otherwise the specialization will not be seen by Rcpp types
+// otherwise the specialization will not be
+// seen by Rcpp types
 #include <Rcpp.h>
 ```
 
@@ -212,20 +210,22 @@ overload:
 ```{Rcpp, eval = FALSE}
 #include <RcppCommon.h>
 
-// third party library that declares template class Bling<T>
+// third party library that declares
+// a template class Bling<T>
 #include <foobar.h>
 
 // declaring the partial specialization
 namespace Rcpp {
     namespace traits {
 
-        template <typename T> SEXP wrap( const Bling<T>& ) ;
+        template <typename T>
+        SEXP wrap(const Bling<T>&);
 
     }
 }
 
-// this must appear after the specialization,
-// otherwise the specialization will not be seen by Rcpp types
+// this must appear after the specialization, or
+// specialization will not be seen by Rcpp types
 #include <Rcpp.h>
 
 ```
@@ -246,15 +246,15 @@ will attempt to use the constructor of the target class taking a `SEXP`.
 
 class Foo{
     public:
-        Foo() ;
+        Foo();
 
-        // this constructor enables implicit Rcpp::as
-        Foo(SEXP) ;
+        // this ctor enables implicit Rcpp::as
+        Foo(SEXP);
 }
 
 
-// this must appear after the specialization,
-// otherwise the specialization will not be seen by Rcpp types
+// this must appear after the specialization, or
+// specialization will not be seen by Rcpp types
 #include <Rcpp.h>
 ```
 
@@ -271,11 +271,11 @@ non-intrusive implicit conversion capabilities.
 
 // declaring the specialization
 namespace Rcpp {
-    template <> Bar as( SEXP ) ;
+    template <> Bar as(SEXP);
 }
 
-// this must appear after the specialization,
-// otherwise the specialization will not be seen by Rcpp types
+// this must appear after the specialization, or
+// specialization will not be seen by Rcpp types
 #include <Rcpp.h>
 ```
 
@@ -316,12 +316,12 @@ namespace Rcpp {
 
         template <typename T> class Exporter{
         public:
-            Exporter( SEXP x ) : t(x){}
-            inline T get(){ return t ; }
+            Exporter(SEXP x) : t(x){}
+            inline T get() { return t; }
 
         private:
-            T t ;
-        } ;
+            T t;
+        };
     }
 }
 ```
@@ -335,23 +335,25 @@ a set of classes as follows:
 ```{Rcpp, eval = FALSE}
 #include <RcppCommon.h>
 
-// third party library that declares template class Bling<T>
+// third party library that declares
+// a template class Bling<T>
 #include <foobar.h>
 
 // declaring the partial specialization
 namespace Rcpp {
     namespace traits {
-        template <typename T> class Exporter< Bling<T> >;
+        template <typename T> 
+        class Exporter< Bling<T> >;
     }
 }
 
-// this must appear after the specialization,
-// otherwise the specialization will not be seen by Rcpp types
+// this must appear after the specialization, or
+// specialization will not be seen by Rcpp types
 #include <Rcpp.h>
 ```
 
-Using this approach, the requirements for the `Exporter< Bling<T> >`
-class are:
+Using this approach, the requirements for the
+`Exporter< Bling<T> >` class are:
 
 - it should have a constructor taking a `SEXP`
 - it should have a methods called `get` that returns an instance
