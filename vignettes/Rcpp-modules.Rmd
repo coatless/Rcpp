@@ -1,13 +1,14 @@
 ---
-title: |
-       | Exposing \proglang{C++} functions and classes with \pkg{Rcpp} modules
+title: | 
+       | Exposing \proglang{C++} functions and classes 
+       | with \pkg{Rcpp} modules
 
 # Use letters for affiliations
 author:
   - name: Dirk Eddelbuettel
     affiliation: a
-  - name: Romain Francois
-    affiliation: a
+  - name: Romain François
+    affiliation: b
 
 address:
   - code: a
@@ -16,7 +17,7 @@ address:
     address: \url{https://romain.rbind.io/}
 
 # For footer text
-lead_author_surname: Eddelbuettel and Francois
+lead_author_surname: Eddelbuettel and François
 
 # Place DOI URL or CRAN Package URL here
 doi: "https://cran.r-project.org/package=Rcpp"
@@ -52,7 +53,7 @@ fontsize: 9pt
 #one_sided: true
 
 # Optional: Bibliography
-bibliography: '`r Rcpp:::bib()`.bib'
+bibliography: Rcpp
 
 # Optional: Enable a 'Draft' watermark on the document
 #watermark: false
@@ -105,7 +106,7 @@ types, calling the actual worker function and converting the results back to
 a suitable type that can be returned to \proglang{R} (`SEXP`).
 Consider the `norm` function below:
 
-```{Rcpp, eval = FALSE}
+```cpp
 double norm( double x, double y ) {
     return sqrt( x*x + y*y );
 }
@@ -116,17 +117,17 @@ convention, so it cannot be called directly by \proglang{R}. Exposing the
 function involves writing a simple wrapper function
 that does match the `.Call` requirements. \pkg{Rcpp} makes this easy.
 
-```{Rcpp, eval = FALSE}
+```cpp
 using namespace Rcpp;
 RcppExport SEXP norm_wrapper(SEXP x_, SEXP y_) {
     // step 0: convert input to C++ types
     double x = as<double>(x_), y = as<double>(y_);
 
     // step 1: call the underlying C++ function
-    double res = norm( x, y );
+    double res = norm(x, y);
 
     // step 2: return the result as a SEXP
-    return wrap( res );
+    return wrap(res);
 }
 ```
 
@@ -145,7 +146,7 @@ We should note that \pkg{Rcpp} now has \textsl{Rcpp attributes} which extends
 certain aspect of \textsl{Rcpp modules} and makes binding to simple functions
 such as this one even easier.  With \textsl{Rcpp attribues} we can just write
 
-```{Rcpp, eval = FALSE}
+```cpp
 # include <Rcpp.h>
 
 // [[Rcpp::export]]
@@ -166,14 +167,15 @@ requires writing glue code for each member function that is to be exposed.
 
 Consider the simple `Uniform` class below:
 
-```{Rcpp, eval = FALSE}
+```cpp
 class Uniform {
 public:
-    Uniform(double min_, double max_) : min(min_), max(max_) {}
+    Uniform(double min_, double max_) : 
+       min(min_), max(max_) {}
 
     NumericVector draw(int n) {
         RNGScope scope;
-        return runif( n, min, max );
+        return runif(n, min, max);
     }
 
 private:
@@ -187,25 +189,29 @@ the `draw` method. External pointers
 `Rcpp:::XPtr` template from \pkg{Rcpp} we can expose the class
 with these two functions:
 
-```{Rcpp, eval = FALSE}
+```cpp
 using namespace Rcpp;
 
-/// create an external pointer to a Uniform object
-RcppExport SEXP Uniform__new(SEXP min_, SEXP max_) {
+/// create external pointer to a Uniform object
+RcppExport SEXP Uniform__new(SEXP min_, 
+                             SEXP max_) {
     // convert inputs to appropriate C++ types
-    double min = as<double>(min_), max = as<double>(max_);
+    double min = as<double>(min_), 
+           max = as<double>(max_);
 
-    // create a pointer to an Uniform object and wrap it
-    // as an external pointer
-    Rcpp::XPtr<Uniform> ptr( new Uniform( min, max ), true );
+    // create pointer to an Uniform object and 
+    // wrap it as an external pointer
+    Rcpp::XPtr<Uniform> 
+    ptr( new Uniform( min, max ), true );
 
     // return the external pointer to the R side
     return ptr;
 }
 
 /// invoke the draw method
-RcppExport SEXP Uniform__draw( SEXP xp, SEXP n_ ) {
-    // grab the object as a XPtr (smart pointer) to Uniform
+RcppExport SEXP Uniform__draw(SEXP xp, SEXP n_) {
+    // grab the object as a XPtr (smart pointer) 
+    // to Uniform
     Rcpp::XPtr<Uniform> ptr(xp);
 
     // convert the parameter to int
@@ -234,32 +240,38 @@ DE 21 Sep 2013: there must a bug somewhere in the vignette processing
 -->
 
 ```{r, eval=FALSE}
-f1 <- cxxfunction( , "", includes = unifModCode, plugin = "Rcpp" )
-getDynLib(f1)  ## will display information about 'f1' just created
+f1 <- cxxfunction( , "", includes = unifModCode,
+                  plugin = "Rcpp" )
+getDynLib(f1)  ## will display info about 'f1' 
 ```
 
 The following listing shows some \textsl{manual} wrapping to access the code,
 we will see later how this can be automated:
 
 ```{r, eval=FALSE}
-setClass( "Uniform", representation( pointer = "externalptr" ) )
+setClass("Uniform",
+         representation( pointer = "externalptr"))
 
 # helper
 Uniform_method <- function(name) {
-    paste( "Uniform", name, sep = "__" )
+    paste("Uniform", name, sep = "__")
 }
 
 # syntactic sugar to allow object$method( ... )
-setMethod( "$", "Uniform", function(x, name ) {
-    function(...) .Call( Uniform_method(name) , x@pointer, ... )
+setMethod("$", "Uniform", function(x, name) {
+    function(...)
+        .Call(Uniform_method(name) ,
+              x@pointer, ...)
 } )
 # syntactic sugar to allow new( "Uniform", ... )
-setMethod( "initialize", "Uniform", function(.Object, ...) {
-    .Object@pointer <- .Call( Uniform_method("new"), ... )
+setMethod("initialize", "Uniform",
+          function(.Object, ...) {
+    .Object@pointer <- 
+        .Call(Uniform_method("new"), ...)
     .Object
 } )
 
-u <- new( "Uniform", 0, 10 )
+u <- new("Uniform", 0, 10)
 u$draw( 10L )
 ```
 
@@ -273,7 +285,7 @@ class in a way that makes both the internal
 
 
 
-# Rcpp modules {#sec:modules}
+# Rcpp modules 
 
 The design of Rcpp modules has been influenced by \proglang{Python} modules which are generated by the
 `Boost.Python` library \citep{Abrahams+Grosse-Kunstleve:2003:Boost.Python}.
@@ -281,7 +293,7 @@ Rcpp modules provide a convenient and easy-to-use way
 to expose \proglang{C++} functions and classes to \proglang{R}, grouped
 together in a single entity.
 
-A Rcpp module is created in a `cpp` file using the `RCPP\_MODULE`
+A Rcpp module is created in a `cpp` file using the `RCPP_MODULE`
 macro, which then provides declarative code of what the module
 exposes to \proglang{R}.
 
@@ -290,15 +302,15 @@ exposes to \proglang{R}.
 Consider the `norm` function from the previous section.
 We can expose it to \proglang{R} :
 
-```{Rcpp, eval = FALSE}
+```cpp
 using namespace Rcpp;
 
-double norm( double x, double y ) {
-    return sqrt( x*x + y*y );
+double norm(double x, double y) {
+    return sqrt(x*x + y*y);
 }
 
 RCPP_MODULE(mod) {
-    function( "norm", &norm );
+    function("norm", &norm);
 }
 ```
 
@@ -315,15 +327,16 @@ inc <- '
 using namespace Rcpp;
 
 double norm( double x, double y ) {
-    return sqrt( x*x + y*y );
+    return sqrt(x*x + y*y);
 }
 
 RCPP_MODULE(mod) {
-    function( "norm", &norm );
+    function("norm", &norm);
 }
 '
 
-fx <- cxxfunction(signature(), plugin="Rcpp", include=inc)
+fx <- cxxfunction(signature(),
+                  plugin="Rcpp", include=inc)
 mod <- Module("mod", getDynLib(fx))
 ```
 
@@ -346,7 +359,7 @@ directly. More details on this aspect follow below.
 A module can contain any number of calls to `function` to register
 many internal functions to \proglang{R}. For example, these 6 functions :
 
-```{Rcpp, eval = FALSE}
+```cpp
 std::string hello() {
     return "hello";
 }
@@ -360,21 +373,21 @@ double foo( int x, double y) {
 }
 
 void bla( ) {
-    Rprintf( "hello\\n" );
+    Rprintf("hello\\n");
 }
 
 void bla1( int x) {
-    Rprintf( "hello (x = %d)\\n", x );
+    Rprintf("hello (x = %d)\\n", x);
 }
 
 void bla2( int x, double y) {
-    Rprintf( "hello (x = %d, y = %5.2f)\\n", x, y );
+    Rprintf("hello (x = %d, y = %5.2f)\\n", x, y);
 }
 ```
 
 can be exposed with the following minimal code:
 
-```{Rcpp, eval = FALSE}
+```cpp
 RCPP_MODULE(yada) {
     using namespace Rcpp;
 
@@ -390,7 +403,7 @@ RCPP_MODULE(yada) {
 which can then be used from \proglang{R}:
 
 ```{r, eval=FALSE}
-require( Rcpp )
+require(Rcpp)
 
 yd <- Module("yada", getDynLib(fx))
 yd$bar(2L)
@@ -406,7 +419,7 @@ In the case of a package (as for example the one created by
 below), we can use
 
 ```{r, eval=FALSE}
-require(myModulePackage)    ## or whichever name was chose
+require(myModulePackage)    ## if another name
 
 bar(2L)
 foo(2L, 10.0)
@@ -434,15 +447,16 @@ are:
 In addition to the name of the function and the function pointer, it is possible
 to pass a short description of the function as the third parameter of `function`.
 
-```{Rcpp, eval = FALSE}
+```cpp
 using namespace Rcpp;
 
-double norm( double x, double y ) {
-    return sqrt( x*x + y*y );
+double norm(double x, double y) {
+    return sqrt(x*x + y*y);
 }
 
 RCPP_MODULE(mod) {
-    function( "norm", &norm, "Provides a simple vector norm" );
+    function("norm", &norm, 
+             "Provides a simple vector norm");
 }
 ```
 
@@ -459,17 +473,18 @@ show(mod$norm)
 of the R function that encapsulates the C++ function, by passing
 a `Rcpp::List` after the function pointer.
 
-```{Rcpp, eval = FALSE}
+```cpp
 using namespace Rcpp;
 
-double norm( double x, double y ) {
-    return sqrt( x*x + y*y );
+double norm(double x, double y) {
+    return sqrt(x*x + y*y);
 }
 
 RCPP_MODULE(mod_formals) {
     function("norm",
              &norm,
-             List::create( _["x"] = 0.0, _["y"] = 0.0 ),
+             List::create(_["x"] = 0.0, 
+                          _["y"] = 0.0),
              "Provides a simple vector norm");
 }
 ```
@@ -479,23 +494,23 @@ A simple usage example is provided below:
 ```{r, eval=FALSE}
 norm <- mod$norm
 norm()
-norm( y = 2 )
-norm( x = 2, y = 3 )
-args( norm )
+norm(y = 2)
+norm(x = 2, y = 3)
+args(norm)
 ```
 
 To set formal arguments without default values, simply omit the rhs.
 
-```{Rcpp, eval = FALSE}
+```cpp
 using namespace Rcpp;
 
-double norm( double x, double y ) {
-    return sqrt( x*x + y*y );
+double norm(double x, double y) {
+    return sqrt(x*x + y*y);
 }
 
 RCPP_MODULE(mod_formals2) {
     function("norm", &norm,
-             List::create( _["x"], _["y"] = 0.0 ),
+             List::create(_["x"], _["y"] = 0.0),
              "Provides a simple vector norm");
 }
 ```
@@ -510,84 +525,89 @@ args(norm)
 The ellipsis (`...`) can be used to denote that additional arguments
 are optional; it does not take a default value.
 
-```{Rcpp, eval = FALSE}
+```cpp
 using namespace Rcpp;
 
-double norm( double x, double y ) {
-    return sqrt( x*x + y*y );
+double norm(double x, double y) {
+    return sqrt(x*x + y*y);
 }
 
 RCPP_MODULE(mod_formals3) {
-    function( "norm", &norm,
-             List::create( _["x"], _["..."] ),
+    function("norm", &norm,
+             List::create(_["x"], _["..."]),
              "documentation for norm");
 }
 ```
+
+and from the R side:
+
 ```{r, eval=FALSE}
 norm <- mod$norm
-args( norm )
+args(norm)
 ```
 
 
-## Exposing \proglang{C++ classes using Rcpp modules}
+## Exposing \proglang{C++} classes using Rcpp modules
 
 Rcpp modules also provide a mechanism for exposing \proglang{C++} classes, based
 on the reference classes introduced in R 2.12.0.
 
 ### Initial example
 
-A class is exposed using the `class\_` keyword. The `Uniform`
+A class is exposed using the `class_` keyword. The `Uniform`
 class may be exposed to \proglang{R} as follows:
 
-```{Rcpp, eval = FALSE}
+```cpp
 using namespace Rcpp;
 class Uniform {
 public:
-    Uniform(double min_, double max_) : min(min_), max(max_) {}
+    Uniform(double min_, double max_) : 
+       min(min_), max(max_) {}
 
     NumericVector draw(int n) const {
         RNGScope scope;
-        return runif( n, min, max );
+        return runif(n, min, max);
     }
 
     double min, max;
 };
 
-double uniformRange( Uniform* w) {
+double uniformRange(Uniform* w) {
     return w->max - w->min;
 }
 
 RCPP_MODULE(unif_module) {
 
-    class_<Uniform>( "Uniform" )
+    class_<Uniform>("Uniform")
 
     .constructor<double,double>()
 
-    .field( "min", &Uniform::min )
-    .field( "max", &Uniform::max )
+    .field("min", &Uniform::min)
+    .field("max", &Uniform::max)
 
-    .method( "draw", &Uniform::draw )
-    .method( "range", &uniformRange )
+    .method("draw", &Uniform::draw)
+    .method("range", &uniformRange)
     ;
 
 }
 ```
 
 ```{r, eval=FALSE}
-## assumes   fx_unif <- cxxfunction(...)   has ben run
-unif_module <- Module( "unif_module", getDynLib(fx_unif ) )
+## assumes   fx_unif <- cxxfunction(...)   ran
+unif_module <- Module("unif_module",
+                      getDynLib(fx_unif))
 Uniform <- unif_module$Uniform
-u <- new( Uniform, 0, 10 )
-u$draw( 10L )
+u <- new(Uniform, 0, 10)
+u$draw(10L)
 u$range()
 u$max <- 1
 u$range()
-u$draw( 10 )
+u$draw(10)
 ```
 
-`class\_` is templated by the \proglang{C++} class or struct
+`class_` is templated by the \proglang{C++} class or struct
 that is to be exposed to \proglang{R}.
-The parameter of the `class\_<Uniform>` constructor is the name we will
+The parameter of the `class_<Uniform>` constructor is the name we will
 use on the \proglang{R} side. It usually makes sense to use the same name as the class
 name. While this is not enforced, it might be useful when exposing a class
 generated from a template.
@@ -597,18 +617,19 @@ Then constructors, fields and methods are exposed.
 ### Exposing constructors using Rcpp modules
 
 Public constructors that take from 0 and 6 parameters can be exposed
-to the R level using the `.constuctor` template method of `.class\_`.
+to the R level using the `.constuctor` template method of `.class_`.
 
 Optionally, `.constructor` can take a description as the first argument.
 
-```{Rcpp, eval = FALSE}
-    .constructor<double,double>("sets the min and max value of the distribution")
+```cpp
+ .constructor<double,double>("sets the min and "
+      "max value of the distribution")
 ```
 
 Also, the second argument can be a function pointer (called validator)
 matching the following type :
 
-```{Rcpp, eval = FALSE}
+```cpp
 typedef bool (*ValidConstructor)(SEXP*,int);
 ```
 
@@ -623,21 +644,21 @@ TODO: include validator example here
 
 ### Exposing fields and properties
 
-`class\_` has three ways to expose fields and properties, as
+`class_` has three ways to expose fields and properties, as
 illustrated in the example below :
 
-```{Rcpp, eval = FALSE}
+```cpp
 using namespace Rcpp;
 class Foo {
 public:
-    Foo(double x_, double y_, double z_ ):
+    Foo(double x_, double y_, double z_):
         x(x_), y(y_), z(z_) {}
 
     double x;
     double y;
 
     double get_z() { return z; }
-    void set_z( double z_ ) { z = z_; }
+    void set_z(double z_) { z = z_; }
 
 private:
     double z;
@@ -648,10 +669,10 @@ RCPP_MODULE(mod_foo) {
 
     .constructor<double,double,double>()
 
-    .field( "x", &Foo::x )
-    .field_readonly( "y", &Foo::y )
+    .field("x", &Foo::x)
+    .field_readonly("y", &Foo::y)
 
-    .property( "z", &Foo::get_z, &Foo::set_z )
+    .property("z", &Foo::get_z, &Foo::set_z)
     ;
 }
 ```
@@ -660,15 +681,16 @@ The `.field` method exposes a public field with read/write access from R.
 `field` accepts an extra parameter to give a short description of the
 field:
 
-```{Rcpp, eval = FALSE}
-    .field( "x", &Foo::x, "documentation for x" )
+```cpp
+  .field("x", &Foo::x, "documentation for x")
 ```
 
-The `.field\_readonly` exposes a public field with read-only access from R.
+The `.field_readonly` exposes a public field with read-only access from R.
 It also accepts the description of the field.
 
-```{Rcpp, eval = FALSE}
-    .field_readonly( "y", &Foo::y, "documentation for y" )
+```cpp
+  .field_readonly("y", &Foo::y, 
+                  "documentation for y")
 ```
 
 The `.property` method allows indirect access to fields through
@@ -676,57 +698,60 @@ a getter and a setter. The setter is optional, and the property is considered
 read-only if the setter is not supplied. A description of the property is also
 allowed:
 
-```{Rcpp, eval = FALSE}
-    // with getter and setter
-    .property( "z", &Foo::get_z, &Foo::set_z, "Documentation for z" )
+```cpp
+  // with getter and setter
+  .property("z", &Foo::get_z, 
+            &Foo::set_z, "Documentation for z")
 
-    // with only getter
-    .property( "z", &Foo::get_z, "Documentation for z" )
+  // with only getter
+  .property("z", 
+            &Foo::get_z, "Documentation for z")
 ```
 
 The type of the field (\textbf{T}) is deduced from the return type of the getter, and if a
 setter is given its unique parameter should be of the same type.
 
 Getters can be member functions taking no parameter and returning a \textbf{T}
-(for example `get\_z` above), or
+(for example `get_z` above), or
 a free function taking a pointer to the exposed
 class and returning a \textbf{T}, for example:
 
-```{Rcpp, eval = FALSE}
-double z_get( Foo* foo ) { return foo->get_z(); }
+```cpp
+double z_get(Foo* foo) { return foo->get_z(); }
 ```
 
 Setters can be either a member function taking a `T` and returning void, such
-as `set\_z` above, or a free function taking a pointer to the target
+as `set_z` above, or a free function taking a pointer to the target
 class and a \textbf{T} :
 
-```{Rcpp, eval = FALSE}
-void z_set( Foo* foo, double z ) { foo->set_z(z); }
+```cpp
+void z_set(Foo* foo, double z) { foo->set_z(z); }
 ```
 
 Using properties gives more flexibility in case field access has to be tracked
 or has impact on other fields. For example, this class keeps track of how many times
 the `x` field is read and written.
 
-```{Rcpp, eval = FALSE}
+```cpp
 class Bar {
 public:
 
     Bar(double x_) : x(x_), nread(0), nwrite(0) {}
 
-    double get_x( ) {
+    double get_x() {
         nread++;
         return x;
     }
 
-    void set_x( double x_) {
+    void set_x(double x_) {
         nwrite++;
         x = x_;
     }
 
     IntegerVector stats() const {
-        return IntegerVector::create(_["read"] = nread,
-                                     _["write"] = nwrite);
+        return 
+        IntegerVector::create(_["read"] = nread,
+                              _["write"] = nwrite);
     }
 
 private:
@@ -749,7 +774,7 @@ Here is a simple usage example:
 
 ```{r, eval=FALSE}
 Bar <- mod_bar$Bar
-b <- new( Bar, 10 )
+b <- new(Bar, 10)
 b$x + b$x
 b$stats()
 b$x <- 10
@@ -758,7 +783,7 @@ b$stats()
 
 ### Exposing methods using Rcpp modules
 
-`class\_` has several overloaded and templated `.method`
+`class_` has several overloaded and templated `.method`
 functions allowing the programmer to expose a method associated with the class.
 
 A legitimate method to be exposed by `.method` can be:
@@ -771,19 +796,21 @@ A legitimate method to be exposed by `.method` can be:
   `Rcpp::as` and returning a type that can be handled by `Rcpp::wrap`
   or void.
 
-\paragraph{Documenting methods} `.method` can also include
-a short documentation of the method, after the
-method (or free function) pointer.
+### Documenting methods
 
-```{Rcpp, eval = FALSE}
+`.method` can also include a short documentation of the method, after the method
+(or free function) pointer.
+
+```cpp
 .method("stats", &Bar::stats,
-        "vector indicating the number of times x has been read and written" )
+        "vector indicating the number of "
+        "times x has been read and written")
 ```
 
 TODO: mention overloading, need good example.
 
 
-\paragraph{Const and non-const member functions}
+### Const and non-const member functions
 
 `method` is able to expose both `const` and `non const`
 member functions of a class. There are however situations where
@@ -792,23 +819,23 @@ signature by the `const`-ness. It is for example the case of the
 member functions `back` of the `std::vector` template from
 the STL.
 
-```{Rcpp, eval = FALSE}
+```cpp
 reference back ( );
 const_reference back ( ) const;
 ```
 
-To resolve the ambiguity, it is possible to use `const\_method`
-or `nonconst\_method` instead of `method` in order
+To resolve the ambiguity, it is possible to use `const_method`
+or `nonconst_method` instead of `method` in order
 to restrict the candidate methods.
 
-\paragraph{Special methods}
+### Special methods
 
-\pkg{Rcpp} considers the methods `[[` and `[[<-` special,
+\pkg{Rcpp} considers the methods `[[` and `[[<-` special, 
 and promotes them to indexing methods on the \proglang{R} side.
 
 ### Object finalizers
 
-The `.finalizer` member function of `class\_` can be used to
+The `.finalizer` member function of `class_` can be used to
 register a finalizer. A finalizer is a free function that takes a pointer
 to the target class and return `void`. The finalizer is called
 before the destructor and so operates on a valid object of the target class.
@@ -820,7 +847,7 @@ the \proglang{C++} object is garbage collected.
 
 ### S4 dispatch
 
-When a \proglang{C++} class is exposed by the `class\_` template,
+When a \proglang{C++} class is exposed by the `class_` template,
 a new S4 class is registered as well. The name of the S4 class is
 obfuscated in order to avoid name clashes (i.e. two modules exposing the
 same class).
@@ -830,9 +857,10 @@ This allows implementation of \proglang{R}-level
 method for \proglang{C++} `World` objects:
 
 ```{r, eval=FALSE}
-setMethod( "show", yada$World , function(object) {
-    msg <- paste( "World object with message : ", object$greet() )
-    writeLines( msg )
+setMethod("show", yada$World , function(object) {
+    msg <- paste("World object with message : ",
+                 object$greet())
+    writeLines(msg)
 } )
 ```
 
@@ -845,67 +873,79 @@ TODO: mention R inheritance (John ?)
 The following example illustrates how to use Rcpp modules to expose
 the class `std::vector<double>` from the STL.
 
-```{Rcpp, eval = FALSE}
-typedef std::vector<double> vec; 		// convenience typedef
-void vec_assign( vec* obj, Rcpp::NumericVector data ) {  // helpers
-    obj->assign( data.begin(), data.end() );
+```cpp
+typedef std::vector<double> vec; 	
+void vec_assign(vec* obj, 
+                Rcpp::NumericVector data) {
+    obj->assign(data.begin(), data.end());
 }
-void vec_insert( vec* obj, int position, Rcpp::NumericVector data) {
+void vec_insert(vec* obj, int position, 
+                Rcpp::NumericVector data) {
     vec::iterator it = obj->begin() + position;
-    obj->insert( it, data.begin(), data.end() );
+    obj->insert(it, data.begin(), data.end());
 }
-Rcpp::NumericVector vec_asR( vec* obj ) { return Rcpp::wrap( *obj ); }
-void vec_set( vec* obj, int i, double value ) { obj->at( i ) = value; }
+Rcpp::NumericVector vec_asR( vec* obj ) { 
+   return Rcpp::wrap( *obj ); 
+}
+void vec_set(vec* obj, int i, double value) { 
+   obj->at( i ) = value; 
+}
 
 RCPP_MODULE(mod_vec) {
     using namespace Rcpp;
 
-    // we expose the class std::vector<double> as "vec" on the R side
-    class_<vec>( "vec")
+    // we expose class std::vector<double> 
+    // as "vec" on the R side
+    class_<vec>("vec")
 
     // exposing constructors
     .constructor()
     .constructor<int>()
 
     // exposing member functions
-    .method( "size", &vec::size)
-    .method( "max_size", &vec::max_size)
-    .method( "resize", &vec::resize)
-    .method( "capacity", &vec::capacity)
-    .method( "empty", &vec::empty)
-    .method( "reserve", &vec::reserve)
-    .method( "push_back", &vec::push_back )
-    .method( "pop_back", &vec::pop_back )
-    .method( "clear", &vec::clear )
+    .method("size", &vec::size)
+    .method("max_size", &vec::max_size)
+    .method("resize", &vec::resize)
+    .method("capacity", &vec::capacity)
+    .method("empty", &vec::empty)
+    .method("reserve", &vec::reserve)
+    .method("push_back", &vec::push_back)
+    .method("pop_back", &vec::pop_back)
+    .method("clear", &vec::clear)
 
-    // specifically exposing const member functions
-    .const_method( "back", &vec::back )
-    .const_method( "front", &vec::front )
-    .const_method( "at", &vec::at )
+    // exposing const member functions
+    .const_method("back", &vec::back)
+    .const_method("front", &vec::front)
+    .const_method("at", &vec::at )
 
-    // exposing free functions taking a std::vector<double>*
-    // as their first argument
-    .method( "assign", &vec_assign )
-    .method( "insert", &vec_insert )
-    .method( "as.vector", &vec_asR )
+    // exposing free functions taking a 
+    // std::vector<double>* as their first 
+    // argument
+    .method("assign", &vec_assign)
+    .method("insert", &vec_insert)
+    .method("as.vector", &vec_asR)
 
     // special methods for indexing
-    .const_method( "[[", &vec::at )
-    .method( "[[<-", &vec_set )
+    .const_method("[[", &vec::at)
+    .method("[[<-", &vec_set)
     ;
 }
 ```
 
 ```{r, eval=FALSE}
-## for code compiled on the fly using cxxfunction() into 'fx_vec', we use
-mod_vec <- Module( "mod_vec", getDynLib(fx_vec), mustStart = TRUE )
+# for code compiled on the fly using
+# cxxfunction() into 'fx_vec', we use
+mod_vec <- Module("mod_vec",
+                  getDynLib(fx_vec),
+                  mustStart = TRUE)
 vec <- mod_vec$vec
-## and that is not needed in a package setup as e.g. one created
-## via Rcpp.package.skeleton(..., module=TRUE)
-v <- new( vec )
-v$reserve( 50L )
-v$assign( 1:10 )
-v$push_back( 10 )
+# and that is not needed in a package
+# setup as e.g. one created
+# via Rcpp.package.skeleton(..., module=TRUE)
+v <- new(vec)
+v$reserve(50L)
+v$assign(1:10)
+v$push_back(10)
 v$size()
 v$capacity()
 v[[ 0L ]]
@@ -936,9 +976,9 @@ In some case we have found that explicitly naming a symbol can be preferable:
 import(Rcpp, evalCpp)
 ```
 
-### Load the module
+## Load the module
 
-\paragraph{Deprecated older method using loadRcppModules} 
+### Deprecated older method using loadRcppModules
 
 Note: This approach is deprecated as of Rcpp 0.12.5, and now triggers a warning
 message.  Eventually this function will be withdrawn.
@@ -969,7 +1009,7 @@ with a default value of `TRUE`. With this default value, all content
 from the module is exposed directly in the package namespace. If set to
 `FALSE`, all content is exposed as components of the module.
 
-\paragraph{Preferred current method using loadModule}   
+### Preferred current method using loadModule
 
 Starting with release 0.9.11, an alternative is provided by the
 `loadModule()` function which takes the module name as an argument.
@@ -1002,7 +1042,7 @@ yada <- Module( "yada" )
 ```
 
 ```{r, echo=FALSE,eval=TRUE}
-options( prompt = "> ", continue = "+ " )
+options(prompt = "> ", continue = "+ ")
 ```
 
 
@@ -1013,7 +1053,7 @@ The `Rcpp.package.skeleton` function has been improved to help
 the skeleton generator installs code that uses a simple module.
 
 ```{r, eval=FALSE}
-Rcpp.package.skeleton( "testmod", module = TRUE )
+Rcpp.package.skeleton("testmod", module = TRUE)
 ```
 
 Creating a new package using \textsl{Rcpp modules} is easiest via the call to
@@ -1027,8 +1067,8 @@ package with three example Modules results.
 file containing some information about the module.
 
 ```{r, eval=FALSE}
-yada <- Module( "yada" )
-prompt( yada, "yada-module.Rd" )
+yada <- Module("yada")
+prompt(yada, "yada-module.Rd")
 ```
 
 We strongly recommend using a package when working with Modules.  But in case a
