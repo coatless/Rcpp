@@ -1,6 +1,5 @@
 ---
-title: |
-       | \pkg{Rcpp} Attributes
+title: \pkg{Rcpp} Attributes
 
 # Use letters for affiliations
 author:
@@ -8,7 +7,7 @@ author:
     affiliation: a
   - name: Dirk Eddelbuettel
     affiliation: b
-  - name: Romain Francois
+  - name: Romain François
     affiliation: c
 
 address:
@@ -20,7 +19,7 @@ address:
     address: \url{https://romain.rbind.io/}
     
 # For footer text  TODO(fold into template, allow free form two-authors)
-lead_author_surname: Allaire, Eddelbuettel, Francois
+lead_author_surname: Allaire, Eddelbuettel, François
 
 # Place DOI URL or CRAN Package URL here
 doi: "https://cran.r-project.org/package=Rcpp"
@@ -57,7 +56,7 @@ fontsize: 9pt
 #one_sided: true
 
 # Optional: Bibliography 
-bibliography: '`r Rcpp:::bib()`'
+bibliography: Rcpp
 
 # Optional: Enable a 'Draft' watermark on the document
 #watermark: false
@@ -65,10 +64,8 @@ bibliography: '`r Rcpp:::bib()`'
 # Customize footer, eg by referencing the vignette
 footer_contents: "Rcpp Vignette"
 
-# Our style
-output: 
-  pinp::pinp:
-    keep_tex: true
+# Produce a pinp document
+output: pinp::pinp
 
 header-includes:
   \newcommand{\proglang}[1]{\textsf{#1}}
@@ -137,7 +134,8 @@ attribute in the comment above the function):
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-NumericVector convolveCpp(NumericVector a, NumericVector b) {
+NumericVector convolveCpp(NumericVector a,
+                          NumericVector b) {
 
     int na = a.size(), nb = b.size();
     int nab = na + nb - 1;
@@ -175,17 +173,18 @@ then these defaults are also used for the exported R function. For example,
 the following C++ function:
 
 ```{Rcpp, eval = FALSE}
-DataFrame readData(
-    CharacterVector file,
-    CharacterVector colNames = CharacterVector::create(),
-    std::string comment = "#",
-    bool header = true)
+DataFrame readData(CharacterVector file,
+                   CharacterVector colNames =
+                         CharacterVector::create(),
+                   std::string comment = "#",
+                   bool header = true)
 ``` 
 
 Will be exported to R as:
 
 ```{r, eval = FALSE}
-function(file, colNames=character(), comment="#", header=TRUE)
+function(file, colNames=character(),
+         comment="#", header=TRUE)
 ```
 
 Note that C++ rules for default arguments still apply: they must occur
@@ -217,7 +216,8 @@ The correct way to signal errors within \proglang{C++} functions is to throw an 
 
 ```{Rcpp, eval = FALSE}
 if (unexpectedCondition)
-    throw Rcpp::exception("Unexpected condition occurred");
+    throw Rcpp::exception("Unexpected "
+                          "condition occurred");
 ```
 
 There is also an `Rcpp::stop` function that is shorthand for throwing
@@ -251,13 +251,11 @@ call the `Rcpp::checkUserInterrupt` function, for example:
 
 ```{Rcpp, eval = FALSE}
 for (int i=0; i<1000000; i++) {
-    
     // check for interrupt every 1000 iterations
     if (i % 1000 == 0)
         Rcpp::checkUserInterrupt();
     
     // ...do some expensive work...
-    
 }
 ```
 
@@ -302,7 +300,8 @@ adding a name parameter to `Rcpp::export`. For example:
 
 ```{Rcpp, eval = FALSE}
 // [[Rcpp::export(name = ".convolveCpp")]]
-NumericVector convolveCpp(NumericVector a, NumericVector b)
+NumericVector convolveCpp(NumericVector a,
+                          NumericVector b)
 ```
 
 Note that in this case since the specified name is prefaced by a \code{.} the
@@ -349,7 +348,8 @@ of the `Rcpp::export` attribute. For example:
 ```{Rcpp, eval = FALSE}
 // [[Rcpp::export(rng = false)]]
 double myFunction(double input) {
-    // ...code that never uses R random number generation... 
+    // ...code that never uses the
+    // R random number generation... 
 }
 ```
 
@@ -373,14 +373,15 @@ List fastLm(NumericVector yr, NumericMatrix Xr) {
     arma::colvec y(yr.begin(), yr.size(), false);
 
     arma::colvec coef = arma::solve(X, y);
-    arma::colvec resid = y - X*coef;
+    arma::colvec rd = y - X*coef;
 
-    double sig2 = arma::as_scalar(arma::trans(resid)*resid/(n-k));
-    arma::colvec stderrest = arma::sqrt(
-          sig2 * arma::diagvec( arma::inv(arma::trans(X)*X)) );
+    double sig2 = 
+      arma::as_scalar(arma::trans(rd)*rd/(n-k));
+    arma::colvec sderr = arma::sqrt(sig2 *
+      arma::diagvec(arma::inv(arma::trans(X)*X)));
 
-    return List::create(Named("coefficients") = coef,
-                        Named("stderr")       = stderrest);
+    return List::create(Named("coef") = coef,
+                        Named("sderr")= sderr);
 }
 ``` 
 
@@ -513,12 +514,12 @@ or `evalCpp` functions. For example:
 
 ```{r, eval = FALSE}
 cppFunction('
-    int fibonacci(const int x) {
-        if (x < 2)
-            return x;
-        else
-            return (fibonacci(x - 1)) + fibonacci(x - 2);
-    }
+  int fibonacci(const int x) {
+    if (x < 2)
+      return x;
+    else
+      return (fibonacci(x-1)) + fibonacci(x-2);
+  }
 ')
 
 evalCpp('std::numeric_limits<double>::max()')
@@ -527,7 +528,7 @@ evalCpp('std::numeric_limits<double>::max()')
 You can also specify a depends parameter to `cppFunction` or `evalCpp`:
 
 ```{r, eval = FALSE}
-cppFunction(depends = 'RcppArmadillo', code = '...')
+cppFunction(depends='RcppArmadillo', code='...')
 ```
 
 # Package Development 
@@ -554,14 +555,16 @@ To generate a new package with a simple hello, world function that uses
 attributes you can do the following:
 
 ```{r, eval = FALSE}
-Rcpp.package.skeleton("NewPackage", attributes = TRUE)
+Rcpp.package.skeleton("NewPackage",
+                      attributes = TRUE)
 ```
 
 To generate a package based on \proglang{C++} files that you've been using
 with `sourceCpp` you can use the `cpp_files` parameter:
 
 ```{r, eval = FALSE}
-Rcpp.package.skeleton("NewPackage", example_code = FALSE,
+Rcpp.package.skeleton("NewPackage",
+                      example_code = FALSE,
                       cpp_files = c("convolve.cpp"))
 ``` 
 
