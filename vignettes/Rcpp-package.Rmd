@@ -39,8 +39,8 @@ abstract: |
 keywords:
   - Rcpp
   - package
-  - r
-  - cpp
+  - R
+  - C++
 
 # Font size of the document, values of 9pt (default), 10pt, 11pt and 12pt
 fontsize: 9pt
@@ -81,7 +81,7 @@ header-includes:
 
 vignette: >
   %\VignetteIndexEntry{Rcpp-package}
-  %\VignetteKeywords{Rcpp, package, r, cpp}
+  %\VignetteKeywords{Rcpp, package, R, Cpp}
   %\VignettePackage{Rcpp}
   %\VignetteEngine{knitr::rmarkdown}
 ---

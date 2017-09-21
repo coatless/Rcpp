@@ -37,8 +37,8 @@ abstract: |
 keywords:
   - Rcpp
   - modules
-  - r
-  - cpp
+  - R
+  - C++
 
 # Font size of the document, values of 9pt (default), 10pt, 11pt and 12pt
 fontsize: 9pt
@@ -80,7 +80,7 @@ header-includes:
 
 vignette: >
   %\VignetteIndexEntry{Rcpp-modules}
-  %\VignetteKeywords{Rcpp, modules, r, cpp}
+  %\VignetteKeywords{Rcpp, modules, R, Cpp}
   %\VignettePackage{Rcpp}
   %\VignetteEngine{knitr::rmarkdown}
 ---

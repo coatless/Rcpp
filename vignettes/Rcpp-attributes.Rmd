@@ -40,8 +40,8 @@ abstract: |
 keywords:
   - Rcpp
   - attributes
-  - r
-  - cpp
+  - R
+  - C++
 
 # Font size of the document, values of 9pt (default), 10pt, 11pt and 12pt
 fontsize: 9pt
@@ -80,7 +80,7 @@ header-includes:
 
 vignette: >
   %\VignetteIndexEntry{Rcpp-attributes}
-  %\VignetteKeywords{Rcpp, attributes, r, cpp}
+  %\VignetteKeywords{Rcpp, attributes, R, Cpp}
   %\VignettePackage{Rcpp}
   %\VignetteEngine{knitr::rmarkdown}
 ---
